@@ -28,6 +28,8 @@ Only do this after you are done with configuring the `.env` file.
 node .
 ```
 
+Open `Roon > Settings > Extensions` and enable `Discord Presence Integration`.
+
 ### Discord Settings
 You will need to create a new Discord Application through the [Discord Developer Portal](https://discord.com/developers/applications). After creating the application, select the app and go to the settings page for OAuth2.
 Copy the `Client ID`.
