@@ -3,6 +3,8 @@ const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
 
+const RoonSettings = require('./settings');
+const Discord = require('./discord');
 const Discogs = require('./discogs');
 const Imgur = require('./imgur');
 
@@ -24,16 +26,28 @@ let ApiImage;
 
 function Initiate(discord) {
     Discord = discord;
-    Discogs.Initiate();
-    Imgur.Initiate();
+
+    RoonSettings.Initiate(roon);
+    InitiateIntegrations();
 
     roon.init_services({
         required_services: [RoonApiTransport, RoonApiImage],
+        provided_services: [RoonSettings.Service(InitiateIntegrations)],
     });
     roon.start_discovery();
 }
 
+function InitiateIntegrations() {
+    const settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
+
+    Discord.Initiate(settings.discordClientId);
+    Discogs.Initiate(settings.discogsUserToken);
+    Imgur.Initiate();
+}
+
 function Paired(core) {
+    if(Discord.user === undefined) return;
+
     let transport = core.services.RoonApiTransport;
     ApiImage = new RoonApiImage(core);
 
@@ -52,6 +66,7 @@ function Paired(core) {
 }
 
 function Unpaired(core) {
+    if(Discord.user === undefined) return;
     Discord.clearActivity();
 }
 
@@ -105,5 +120,6 @@ async function GetImage(image_key) {
 }
 
 module.exports = {
+    Self: roon,
     Initiate
 };

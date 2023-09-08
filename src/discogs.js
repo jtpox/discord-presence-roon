@@ -1,8 +1,12 @@
 const Discogs = require('disconnect').Client;
+const RoonSettings = require('./settings');
 
 let Client;
-function Initiate() {
-    if(process.env.ENABLE_DISCOGS.toLowerCase() == 'false') return;
+let Settings;
+
+function Initiate(roon, discogsUserToken) {
+    Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
+    if(!Settings.enableDiscogs) return;
 
     Client = new Discogs({
         userToken: process.env.DISCOG_USER_TOKEN,
@@ -10,7 +14,7 @@ function Initiate() {
 }
 
 async function Search(artist, track) {
-    if(process.env.ENABLE_DISCOGS.toLowerCase() == 'false') return {};
+    if(!Settings.enableDiscogs) return {};
     
     let results = await Client.search({
         artist,

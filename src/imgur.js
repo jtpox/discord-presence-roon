@@ -3,20 +3,27 @@ const { join } = require('path');
 const { Readable } = require('stream');
 const { ImgurClient } = require('imgur');
 
+const Settings = require('./settings');
+
 let Client;
+let Roon;
+
 const ImgurConfigLoc = join(__dirname, '../', 'imgur.json');
 let Album = {
     id: null,
     deletehash: null,
 };
 
-function Initiate() {
+function Initiate(roon, imgurClientId, imgurClientSecret, imgurAlbumId, imgurAlbumDeleteHash) {
+    Roon = roon;
+
     Client = new ImgurClient({
         clientId: process.env.IMGUR_CLIENT_ID,
         clientSecret: process.env.IMGUR_CLIENT_SECRET,
     });
 
-    Album = JSON.parse(readFileSync(ImgurConfigLoc).toString());
+    Album.id = imgurAlbumId;
+    Album.deletehash = imgurAlbumDeleteHash;
     console.log(`Using Imgur Album: ${Album.id}`);
 }
 
@@ -76,14 +83,21 @@ async function CreateAlbum() {
 
     const albumDetails = await albumFetch.json();
     const { data } = albumDetails;
-    writeFileSync(
+    /* writeFileSync(
         ImgurConfigLoc,
         JSON.stringify(data),
         {
             encoding: 'utf8',
             flag: 'w',
         },
-    );
+    ); */
+    const settings = roon.load_config('settings') || Settings.DefaultSettings;
+    settings.imgurAlbumId = data.id;
+    settings.imgurAlbumDeleteHash = data.deletehash;
+    
+    Album.id = data.id;
+    Album.deletehash = data.deletehash;
+    roon.save_config('settings', settings);
 
     return data;
 }
