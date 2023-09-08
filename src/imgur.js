@@ -7,8 +7,8 @@ const Settings = require('./settings');
 
 let Client;
 let Roon;
+let ImgurClientId;
 
-const ImgurConfigLoc = join(__dirname, '../', 'imgur.json');
 let Album = {
     id: null,
     deletehash: null,
@@ -18,13 +18,14 @@ function Initiate(roon, imgurClientId, imgurClientSecret, imgurAlbumId, imgurAlb
     Roon = roon;
 
     Client = new ImgurClient({
-        clientId: process.env.IMGUR_CLIENT_ID,
-        clientSecret: process.env.IMGUR_CLIENT_SECRET,
+        clientId: imgurClientId,
+        clientSecret: imgurClientSecret,
     });
+    ImgurClientId = imgurClientId;
 
     Album.id = imgurAlbumId;
     Album.deletehash = imgurAlbumDeleteHash;
-    console.log(`Using Imgur Album: ${Album.id}`);
+    console.log(`Imgur: Using Album ${Album.id}`);
 }
 
 async function UploadToAlbum(buffer, image_key) {
@@ -76,28 +77,21 @@ async function CreateAlbum() {
     const albumFetch = await fetch('https://api.imgur.com/3/album', {
         method: 'POST',
         headers: {
-            Authorization: `Client-ID ${process.env.IMGUR_CLIENT_ID}`,
+            Authorization: `Client-ID ${ImgurClientId}`,
         },
         body: formData,
     });
 
     const albumDetails = await albumFetch.json();
     const { data } = albumDetails;
-    /* writeFileSync(
-        ImgurConfigLoc,
-        JSON.stringify(data),
-        {
-            encoding: 'utf8',
-            flag: 'w',
-        },
-    ); */
-    const settings = roon.load_config('settings') || Settings.DefaultSettings;
+
+    const settings = Roon.load_config('settings') || Settings.DefaultSettings;
     settings.imgurAlbumId = data.id;
     settings.imgurAlbumDeleteHash = data.deletehash;
-    
+
     Album.id = data.id;
     Album.deletehash = data.deletehash;
-    roon.save_config('settings', settings);
+    Roon.save_config('settings', settings);
 
     return data;
 }

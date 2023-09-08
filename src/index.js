@@ -37,11 +37,11 @@ function Initiate() {
 }
 
 function Discover() {
-    if(Discord.Self !== undefined) {
-        console.log('Discovery started...');
+    if(Discord.Self().user !== undefined) {
+        console.log('Roon: Discovery started');
         roon.start_discovery();
     } else {
-        console.log('Discord not yet configured.');
+        console.log('Discord: Waiting for RPC to start');
         setTimeout(() => {
             Discover();
         }, 5000);
@@ -50,7 +50,7 @@ function Discover() {
 }
 
 function InitiateIntegrations() {
-    console.log('Reloading settings...');
+    console.log('Extension: Reloading settings');
     Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
 
     Discord.Initiate(Settings.discordClientId);
@@ -63,18 +63,9 @@ function Paired(core) {
     ApiImage = new RoonApiImage(core);
 
     transport.subscribe_zones((cmd, data) => {
-        if(Discord.Self === undefined) {
-            console.log('Undefined');
-            console.log(Discord);
-            return;
-        } else {
-            console.log('Defined');
-            console.log(Discord);
-        }
+        if(Discord.Self().user === undefined) return;
 
         if(cmd === 'Changed' && data.hasOwnProperty('zones_changed')) {
-            console.log('Here');
-            console.log(Discord);
             const zones_to_check = Settings.roonZones.split(',');
             const zones = data.zones_changed.filter((data) => zones_to_check.includes(data.display_name));
 
@@ -88,13 +79,13 @@ function Paired(core) {
 }
 
 function Unpaired(core) {
-    if(Discord.Self === undefined) return;
-    Discord.Self.clearActivity();
+    if(Discord.Self().user === undefined) return;
+    Discord.Self().clearActivity();
 }
 
 async function SongChanged(data) {
     if(data.state === 'paused') {
-        Discord.Self.user?.clearActivity();
+        Discord.Self().user?.clearActivity();
     }
 
     if(data.state === 'playing') {
@@ -103,21 +94,21 @@ async function SongChanged(data) {
 
         let albumArt = 'roon_labs_logo';
 
-        if(Settings.imgurEnable === 'true') {
+        if(Settings.imgurEnable) {
             const imgurAlbum = await Imgur.GetAlbumArt(data.now_playing.image_key, GetImage);
             albumArt = imgurAlbum;
         }
 
         // Make sure that Imgur is prioritized even when both are enabled.
         if(
-            Settings.discogsEnable === 'true'
+            Settings.discogsEnable
             && albumArt === 'roon_labs_logo'
         ) {
             const searchResult = await Discogs.Search(data.now_playing.three_line.line2, data.now_playing.three_line.line1);
             albumArt = searchResult.cover_image;
         }
 
-        Discord.Self.user?.setActivity({
+        Discord.Self().user?.setActivity({
             // details: data.now_playing.two_line.line1.substring(0, 128),
             details: data.now_playing.one_line.line1.substring(0, 128),
             state: data.now_playing.three_line.line3.substring(0, 128),

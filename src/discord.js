@@ -1,6 +1,6 @@
 const { Client } = require('@xhayper/discord-rpc');
 
-let Discord;
+let Discord = {};
 
 function Initiate(clientId) {
     const client = new Client({
@@ -8,29 +8,24 @@ function Initiate(clientId) {
     });
 
     client.on('ready', () => {
-        console.log(`Authed for user ${client.user.username}`);
-        // Discord = client;
+        console.log(`Discord: Authed for user ${client.user.username}`);
+        Discord = client;
     });
 
     Connect(client);
 }
 
 async function Connect(client, count = 0) {
-    if(count >= 10) {
-        console.log('Max retry attempted. Please edit settings and try again.');
-        return;
-    }
-
     try {
         client.login();
-        Discord = client;
     } catch {
-        console.log('Timed out. Edit Discord settings again.');
-        // Connect(count++);
+        console.log('Discord: Timed out. Please edit settings and try again.');
     }
 }
 
+function Self() { return Discord; }
+
 module.exports = {
-    Self: Discord,
+    Self,
     Initiate,
 };
