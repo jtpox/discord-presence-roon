@@ -1,0 +1,27 @@
+{
+  "name": "discord-presence-roon",
+  "version": "1.0.0",
+  "description": "Discord Presence for Roon.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Jian Ting",
+    "email": "me@jtpox.com",
+    "url": "https://jtpox.com/"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@roonlabs/node-roon-api": "^1.2.3",
+    "@xhayper/discord-rpc": "^1.0.22",
+    "disconnect": "^1.2.2",
+    "dotenv": "^16.3.1",
+    "imgur": "^2.3.0",
+    "node-roon-api-image": "github:roonlabs/node-roon-api-image",
+    "node-roon-api-transport": "github:roonlabs/node-roon-api-transport"
+  },
+  "devDependencies": {
+    "tslib": "^2.6.2"
+  }
+}
