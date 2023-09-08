@@ -1,0 +1,70 @@
+# Discord Presence for Roon
+![Discord Presence](https://raw.githubusercontent.com/jtpox/discord-presence-roon/main/assets/screenshot.png)
+
+Show what you're listening to on Roon!
+
+### Requirements
+- NodeJS
+
+### Getting the Script
+```bash
+git clone https://github.com/jtpox/discord-presence-roon.git
+cd discord-presence-roon
+```
+
+### Configuration
+```bash
+# Create main configuration file.
+cp .env.sample .env
+
+# Create Imgur Anonymous Album save file.
+cp imgur.sample.json imgur.json
+```
+
+### Running
+Only do this after you are done with configuring the `.env` file.
+```bash
+# Run in the folder.
+node .
+```
+
+### Discord Settings
+You will need to create a new Discord Application through the [Discord Developer Portal](https://discord.com/developers/applications). After creating the application, select the app and go to the settings page for OAuth2.
+Copy the `Client ID`.
+
+Edit the `.env` file and save.
+```env
+# Discord Settings
+CLIENT_ID=Paste Client ID here
+```
+
+### Album Images
+#### Imgur Integration
+This feature will upload the album art of the song you are listening to an anonymous Imgur album, which will then be displayed on the Discord presence.
+
+To use this feature, you will need to create an Imgur Application from [here](https://api.imgur.com/oauth2/addclient). Fill in all the fields.
+For "Authorization type", select `OAuth2 authorization without a callback URL`.
+Copy the `Client ID` and `Client Secret`.
+
+Edit the `.env` file and save.
+```env
+# Imgur
+ENABLE_IMGUR=true
+IMGUR_CLIENT_ID=Past client ID here.
+IMGUR_CLIENT_SECRET=Paste client secret here.
+```
+
+#### Discogs Integration
+This feature will search through the Discogs database to find the album art to display on the Discord presence.
+
+To use this feature, you will need a Discord personal access token from [here](https://www.discogs.com/settings/developers).
+
+Edit the `.env` file and save.
+```env
+# Disogs
+ENABLE_DISCOGS=true
+DISCOG_USER_TOKEN=Past personal access token here.
+```
+
+#### Prioritization
+If both Imgur and Discogs integration are enabled, Imgur will always take priority, while Discogs will not be used.
