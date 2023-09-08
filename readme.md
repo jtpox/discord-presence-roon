@@ -63,7 +63,7 @@ Edit the `.env` file and save.
 ```env
 # Disogs
 ENABLE_DISCOGS=true
-DISCOG_USER_TOKEN=Past personal access token here.
+DISCOG_USER_TOKEN=Paste personal access token here.
 ```
 
 #### Prioritization
