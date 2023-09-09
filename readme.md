@@ -44,20 +44,20 @@ Edit the Extension Settings and save.
 
 ### Album Images
 #### Imgur Integration
-This feature will upload the album art of the song you are listening to an anonymous Imgur album, which will then be displayed on the Discord presence.
+This feature will upload the album cover of the song you are listening to an anonymous Imgur album, which will then be displayed on the Discord presence.
 
 To use this feature, you will need to create an Imgur Application from [here](https://api.imgur.com/oauth2/addclient). Fill in all the fields.
 For "Authorization type", select `OAuth2 authorization without a callback URL`.
 Copy the `Client ID` and `Client Secret`.
 
-Edit the Extension Settings and save.
+Edit the Extension Settings, enable Imgur Integration and save.
 
 #### Discogs Integration
-This feature will search through the Discogs database to find the album art to display on the Discord presence.
+This feature will search through the Discogs database to find the album cover to display on the Discord presence.
 
 To use this feature, you will need a Discord personal access token from [here](https://www.discogs.com/settings/developers).
 
-Edit the Extension Settings and save.
+Edit the Extension Settings, enable Discogs Integration and save.
 
 #### Prioritization
 If both Imgur and Discogs integration are enabled, Imgur will always take priority, while Discogs will not be used.
