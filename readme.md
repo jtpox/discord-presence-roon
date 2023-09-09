@@ -3,12 +3,17 @@
 
 Show what you're listening to on Roon!
 
-This extension allows you to display your currently listening song on your Discord Presence. It can also display album art by searching through the Discogs database or uploading it to an anonymous Imgur album.
+This extension allows you to display your currently listening song on your Discord Presence. It can also display album cover by searching through the Discogs database or uploading it to an anonymous Imgur album.
 
 Unfortunately, this script has to be ran on the same instance that a Discord app is running on as it uses Discord RPC.
 
+### Features
+- Discogs Database search for Album Covers.
+- Imgur Uploads for Album Covers.
+
 ### Requirements
 - NodeJS
+- Discord
 
 ### Getting the Script
 ```bash
