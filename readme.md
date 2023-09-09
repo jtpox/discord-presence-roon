@@ -55,7 +55,7 @@ Edit the Extension Settings, enable Imgur Integration and save.
 #### Discogs Integration
 This feature will search through the Discogs database to find the album cover to display on the Discord presence.
 
-To use this feature, you will need a Discord personal access token from [here](https://www.discogs.com/settings/developers).
+To use this feature, you will need a Discogs personal access token from [here](https://www.discogs.com/settings/developers).
 
 Edit the Extension Settings, enable Discogs Integration and save.
 
