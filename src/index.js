@@ -32,21 +32,7 @@ function Initiate() {
         required_services: [RoonApiTransport, RoonApiImage],
         provided_services: [RoonSettings.Service(InitiateIntegrations)],
     });
-    // roon.start_discovery();
-    Discover();
-}
-
-function Discover() {
-    if(Discord.Self().user !== undefined) {
-        console.log('Roon: Discovery started');
-        roon.start_discovery();
-    } else {
-        console.log('Discord: Waiting for RPC to start');
-        setTimeout(() => {
-            Discover();
-        }, 5000);
-        return;
-    }
+    roon.start_discovery();
 }
 
 function InitiateIntegrations() {
@@ -132,4 +118,11 @@ async function GetImage(image_key) {
     });
 }
 
-Initiate();
+if(require.main === module) {
+    Initiate();
+}
+
+module.exports = {
+    Initiate,
+    InitiateIntegrations,
+}

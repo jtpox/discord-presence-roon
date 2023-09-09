@@ -17,7 +17,7 @@ function Initiate(clientId) {
 
 async function Connect(client, count = 0) {
     try {
-        client.login();
+        await client.login();
     } catch {
         console.log('Discord: Timed out. Please edit settings and try again.');
     }
