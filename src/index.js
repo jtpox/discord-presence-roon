@@ -80,7 +80,7 @@ function Paired(core) {
 
 function Unpaired(core) {
     if(Discord.Self().user === undefined) return;
-    Discord.Self().clearActivity();
+    Discord.Self().user?.clearActivity();
 }
 
 async function SongChanged(data) {
