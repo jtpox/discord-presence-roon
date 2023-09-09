@@ -31,7 +31,7 @@ function Service(InitiateIntegrations) {
             if(!isdryrun) {
                 Settings = settings.values;
                 Roon.save_config('settings', Settings);
-                req.send_complete('Success', Settings);
+                req.send_complete('Success', { settings: Layout() });
                 InitiateIntegrations();
             }
         },
