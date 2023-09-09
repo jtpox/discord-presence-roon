@@ -1,4 +1,4 @@
-const { version, author } = require('../package.json');
+const { version, author, homepage } = require('../package.json');
 const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
@@ -14,7 +14,7 @@ var roon = new RoonApi({
     display_version: version,
     publisher: author.name,
     email: author.email,
-    website: author.url,
+    website: homepage,
 
     core_paired: Paired,
     core_unpaired: Unpaired,
