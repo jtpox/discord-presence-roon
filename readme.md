@@ -19,6 +19,7 @@ Unfortunately, this script has to be ran on the same instance that a Discord app
 ```bash
 git clone https://github.com/jtpox/discord-presence-roon.git
 cd discord-presence-roon
+npm install
 ```
 
 ### Running
