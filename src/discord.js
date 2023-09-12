@@ -1,10 +1,11 @@
-const { Client } = require('@xhayper/discord-rpc');
+const { register, Client } = require('discord-rpc');
 
 let Discord = {};
+const scopes = ['rpc'];
 
 function Initiate(clientId) {
     const client = new Client({
-        clientId: clientId,
+        transport: 'ipc',
     });
 
     client.on('ready', () => {
@@ -12,12 +13,15 @@ function Initiate(clientId) {
         Discord = client;
     });
 
-    Connect(client);
+    Connect(client, clientId);
 }
 
-async function Connect(client, count = 0) {
+async function Connect(client, clientId, count = 0) {
     try {
-        await client.login();
+        client.login({
+            clientId,
+            // scopes,
+        }).catch(console.error);
     } catch {
         console.log('Discord: Timed out. Please edit settings and try again.');
     }

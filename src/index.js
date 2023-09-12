@@ -49,7 +49,7 @@ function Paired(core) {
     ApiImage = new RoonApiImage(core);
 
     transport.subscribe_zones((cmd, data) => {
-        if(Discord.Self().user === undefined) return;
+        if(Discord.Self() === undefined) return;
 
         if(cmd === 'Changed' && data.hasOwnProperty('zones_changed')) {
             const zones_to_check = Settings.roonZones.split(',');
@@ -65,13 +65,13 @@ function Paired(core) {
 }
 
 function Unpaired(core) {
-    if(Discord.Self().user === undefined) return;
-    Discord.Self().user?.clearActivity();
+    if(Discord.Self() === undefined) return;
+    Discord.Self().clearActivity();
 }
 
 async function SongChanged(data) {
     if(data.state === 'paused') {
-        Discord.Self().user?.clearActivity();
+        Discord.Self().clearActivity();
     }
 
     if(data.state === 'playing') {
@@ -94,7 +94,8 @@ async function SongChanged(data) {
             albumArt = searchResult.cover_image;
         }
 
-        Discord.Self().user?.setActivity({
+        Discord.Self().setActivity({
+            type: 3,
             // details: data.now_playing.two_line.line1.substring(0, 128),
             details: data.now_playing.one_line.line1.substring(0, 128),
             state: data.now_playing.three_line.line3.substring(0, 128),
