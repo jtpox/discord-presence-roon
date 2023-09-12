@@ -11,7 +11,6 @@ function Initiate(clientId) {
     client.on('ready', () => {
         console.log(`Discord: Authed for user ${client.user.username}`);
         Discord = client;
-        console.log(Discord);
     });
 
     Connect(client, clientId);
