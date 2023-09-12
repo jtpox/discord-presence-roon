@@ -1,8 +1,8 @@
 const RoonApiSettings = require('node-roon-api-settings');
 
 const DefaultSettings = {
-    discordClientId: '',
-    roonZones: '',
+    discordClientId: '1149335969523318975',
+    roonZones: 'Desktop,Living Room',
 
     discogsEnable: false,
     discogsUserToken: '',
