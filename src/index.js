@@ -95,7 +95,7 @@ async function SongChanged(data) {
         }
 
         Discord.Self().setActivity({
-            type: 3,
+            type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
             // details: data.now_playing.two_line.line1.substring(0, 128),
             details: data.now_playing.one_line.line1.substring(0, 128),
             state: data.now_playing.three_line.line3.substring(0, 128),
