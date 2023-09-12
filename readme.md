@@ -38,6 +38,8 @@ After enabling, click on the `Settings` button and a modal will open. Fill in al
 ![Settings Modal](assets/settings.png)
 
 ### Discord Settings
+**NOTE:** This step is not necessary if you want to use the Discord Client ID that is provided by default.
+
 You will need to create a new Discord Application through the [Discord Developer Portal](https://discord.com/developers/applications). After creating the application, select the app and go to the settings page for OAuth2.
 Copy the `Client ID`.
 
