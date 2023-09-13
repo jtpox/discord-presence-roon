@@ -17,8 +17,8 @@ Unfortunately, this script has to be ran on the same instance that a Discord app
 
 ### Getting the Script
 ```bash
-# NOTE: A config.json will be created by Roon after you have enabled the extension in the current working directory in your terminal.
-# To use the same settings, make sure the current working directory is always the same as the config.json is in.
+# NOTE: A config.json will be created by Roon in the current working directory of your terminal.
+# To use the same settings, make sure the current working directory is where config.json is in.
 npx jtpox/discord-presence-roon
 ```
 
