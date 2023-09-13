@@ -102,8 +102,9 @@ async function SongChanged(data) {
     }
 
     if(data.state === 'playing') {
-        const startTimestamp = Math.round((new Date().getTime() / 1000) - (data.now_playing.seek_position || 0));
-        const endTimestamp = Math.round(startTimestamp + data.now_playing.length);
+        // const startTimestamp = Math.round((new Date().getTime() / 1000) - (data.now_playing.seek_position || 0));
+        // const endTimestamp = Math.round(startTimestamp + data.now_playing.length);
+        const endTimestamp = Math.round((new Date().getTime() / 1000) + data.now_playing.length - data.now_playing.seek_position);
 
         let albumArt = 'roon_labs_logo';
 
@@ -125,7 +126,7 @@ async function SongChanged(data) {
             type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
             details: data.now_playing.one_line.line1.substring(0, 128),
             state: data.now_playing.three_line.line3.substring(0, 128),
-            startTimestamp,
+            // startTimestamp,
             endTimestamp,
             instance: false,
             largeImageKey: albumArt,
