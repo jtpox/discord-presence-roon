@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /** @module main */
 const { version, author, homepage } = require('../package.json');
 const RoonApi = require('@roonlabs/node-roon-api');
