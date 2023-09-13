@@ -28,7 +28,6 @@ let Settings;
 /**
  * The package constructor.
  * @function Initiate
- * @memberof discordPresenceRoon
  * @static
  */
 function Initiate() {
@@ -46,7 +45,6 @@ function Initiate() {
 /**
  * Initiate Discord, Discogs and Imgur integrations.
  * @function InitiateIntegrations
- * @memberof discordPresenceRoon
  * @static
  */
 function InitiateIntegrations() {
