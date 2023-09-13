@@ -14,6 +14,15 @@ let Album = {
     deletehash: null,
 };
 
+/**
+ * Constructor for Imgur integration.
+ * @function Initiate
+ * @param {import('@roonlabs/node-roon-api').RoonApi} roon The Roon instance.
+ * @param {string} imgurClientId The Imgur Client ID to access Imgur API.
+ * @param {string} imgurClientSecret The Imgur Client Secret to access Imgur API.
+ * @param {string} imgurAlbumId The Imgur Album ID to access the anonymous Imgur album.
+ * @param {string} imgurAlbumDeleteHash The Imgur Album ID to access the anonymous Imgur album.
+ */
 function Initiate(roon, imgurClientId, imgurClientSecret, imgurAlbumId, imgurAlbumDeleteHash) {
     Roon = roon;
 
@@ -28,6 +37,14 @@ function Initiate(roon, imgurClientId, imgurClientSecret, imgurAlbumId, imgurAlb
     console.log(`Imgur: Using Album ${Album.id}`);
 }
 
+/**
+ * Upload an image to the anonymour Imgur album.
+ * @function UploadToAlbum
+ * @async
+ * @param {Bufer} buffer Buffer of the image file.
+ * @param {string} image_key The name of the image file.
+ * @returns {string} URL of the image.
+ */
 async function UploadToAlbum(buffer, image_key) {
     const response = await Client.upload({
         image: Readable.from(buffer),
@@ -40,6 +57,14 @@ async function UploadToAlbum(buffer, image_key) {
     return response.data.link;
 }
 
+/**
+ * Get album art from anonymous Imgur album.
+ * @function GetAlbumArt
+ * @async
+ * @param {string} image_key 
+ * @param {*} GetImageFn 
+ * @returns {string} URL of album art or default iamge tag from Discord assets.
+ */
 async function GetAlbumArt(image_key, GetImageFn) {
     let albumArt = 'roon_labs_logo';
     let album;
@@ -71,6 +96,11 @@ async function GetAlbumArt(image_key, GetImageFn) {
     return albumArt;
 }
 
+/**
+ * Create an anonymous Imgur album.
+ * @function CreateAlbum
+ * @async 
+ */
 async function CreateAlbum() {
     const formData = new FormData();
     formData.append('title', 'Album Covers for Roon Discord Integration');
@@ -96,6 +126,7 @@ async function CreateAlbum() {
     return data;
 }
 
+/** @namespace imgur */
 module.exports = {
     Initiate,
     UploadToAlbum,

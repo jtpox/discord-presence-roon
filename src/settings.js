@@ -17,11 +17,22 @@ const DefaultSettings = {
 let Roon;
 let Settings;
 
+/**
+ * Constructor for Roon settings.
+ * @function Initiate
+ * @param {import('@roonlabs/node-roon-api').RoonApi} roon The Roon instance.
+ */
 function Initiate(roon) {
     Roon = roon;
     Settings = Roon.load_config('settings') || DefaultSettings;
 }
 
+/**
+ * Sets up the settings service to be used by Roon.
+ * @function Service
+ * @param {Function} InitiateIntegrations The function to restart all integrations.
+ * @returns {RoonApiSettings} The RoonApiSettings instance.
+ */
 function Service(InitiateIntegrations) {
     return new RoonApiSettings(Roon, {
         get_settings: (cb) => {
@@ -38,6 +49,11 @@ function Service(InitiateIntegrations) {
     });
 }
 
+/**
+ * Create the settings form layout.
+ * @function Layout
+ * @returns {object} The object to create the settings form on Roon.
+ */
 function Layout() {
     let layout = {
         values: Settings,
@@ -123,6 +139,7 @@ function Layout() {
     return layout;
 }
 
+/** @namespace settings */
 module.exports = {
     DefaultSettings,
     Initiate,

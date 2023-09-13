@@ -3,6 +3,11 @@ const { register, Client } = require('discord-rpc');
 let Discord = {};
 const scopes = ['rpc'];
 
+/**
+ * Constructor for Discord integration.
+ * @function Initiate
+ * @param {string} clientId Client ID to access Discord RPC.
+ */
 function Initiate(clientId) {
     const client = new Client({
         transport: 'ipc',
@@ -16,7 +21,14 @@ function Initiate(clientId) {
     Connect(client, clientId);
 }
 
-async function Connect(client, clientId, count = 0) {
+/**
+ * Connect to the Discord RPC.
+ * @function Connect
+ * @async
+ * @param {Client} client The Client instance for Discord RPC.
+ * @param {string} clientId The Client ID to access Discord RPC.
+ */
+async function Connect(client, clientId) {
     try {
         client.login({
             clientId,
@@ -27,8 +39,14 @@ async function Connect(client, clientId, count = 0) {
     }
 }
 
+/**
+ * Get the Discord RPC instance.
+ * @function Self
+ * @returns {(Client|object)} Returns the Client when a connection has been established, or an empty object otherwise.
+ */
 function Self() { return Discord; }
 
+/** @namespace discord */
 module.exports = {
     Self,
     Initiate,

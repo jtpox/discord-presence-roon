@@ -27,5 +27,8 @@
     "node-roon-api-settings": "github:roonlabs/node-roon-api-settings",
     "node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
     "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.2"
   }
 }

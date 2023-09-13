@@ -23,6 +23,12 @@ var roon = new RoonApi({
 let ApiImage;
 let Settings;
 
+/**
+ * The package constructor.
+ * @function Initiate
+ * @memberof discordPresenceRoon
+ * @static
+ */
 function Initiate() {
 
     RoonSettings.Initiate(roon);
@@ -35,6 +41,12 @@ function Initiate() {
     roon.start_discovery();
 }
 
+/**
+ * Initiate Discord, Discogs and Imgur integrations.
+ * @function InitiateIntegrations
+ * @memberof discordPresenceRoon
+ * @static
+ */
 function InitiateIntegrations() {
     console.log('Extension: Reloading settings');
     Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
@@ -44,6 +56,11 @@ function InitiateIntegrations() {
     Imgur.Initiate(roon, Settings.imgurClientId, Settings.imgurClientSecret, Settings.imgurAlbumId, Settings.imgurAlbumDeleteHash);
 }
 
+/**
+ * Paired event callback for Roon.
+ * @function Paired
+ * @param {object} core The Roon core.
+ */
 function Paired(core) {
     let transport = core.services.RoonApiTransport;
     ApiImage = new RoonApiImage(core);
@@ -60,15 +77,25 @@ function Paired(core) {
             if(priority_zone.length > 0) SongChanged(priority_zone[0]);
         }
 
-        if(cmd === 'Changed' && data.hasOwnProperty('zones_removed')) Discord.user?.clearActivity();
+        if(cmd === 'Changed' && data.hasOwnProperty('zones_removed')) Discord.Self().clearActivity();
     });
 }
 
+/**
+ * Unpaired event callback for Roon.
+ * @param {object} core The Roon core.
+ */
 function Unpaired(core) {
     if(Discord.Self() === undefined) return;
     Discord.Self().clearActivity();
 }
 
+/**
+ * Song changed event which will update the Discord user activity.
+ * @function SongChanged
+ * @async
+ * @param {object} data The data provided by Roon zones.
+ */
 async function SongChanged(data) {
     if(data.state === 'paused') {
         Discord.Self().clearActivity();
@@ -96,10 +123,8 @@ async function SongChanged(data) {
 
         Discord.Self().setActivity({
             type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
-            // details: data.now_playing.two_line.line1.substring(0, 128),
             details: data.now_playing.one_line.line1.substring(0, 128),
             state: data.now_playing.three_line.line3.substring(0, 128),
-            // state: data.now_playing.two_line.line2.substring(0, 128),
             startTimestamp,
             endTimestamp,
             instance: false,
@@ -123,6 +148,7 @@ if(require.main === module) {
     Initiate();
 }
 
+/** @namespace discordPresenceRoon */
 module.exports = {
     Initiate,
     InitiateIntegrations,
