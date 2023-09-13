@@ -1,5 +1,20 @@
+/** @module settings */
 const RoonApiSettings = require('node-roon-api-settings');
 
+/**
+ * Default settings object.
+ * @typedef {Object} TSettings
+ * @property {string} discordClientId - Client ID to access the Discord RPC.
+ * @property {string} roonZones - Zones to monitor. Separate by commas and ordered by priority.
+ * @property {boolean} discogsEnable - Enable/Disable Discogs integration.
+ * @property {string} discogsUserToken - User Token to access the Discogs API.
+ * @property {boolean} imgurEnable - Enable/Disable Imgur integration.
+ * @property {string} imgurClientId - Client ID to access the Imgur API.
+ * @property {string} imgurClientSecret - Client Secret to access the Imgur API.
+ * @property {string} imgurAlbumId - ID of the anonymous Imgur album.
+ * @property {string} imgurAlbumDeleteHash - Delete Hash ot the anonymous Imgur album.
+ */
+/** @type {TSettings} */
 const DefaultSettings = {
     discordClientId: '1149335969523318975',
     roonZones: 'Desktop,Living Room',
@@ -139,7 +154,6 @@ function Layout() {
     return layout;
 }
 
-/** @namespace settings */
 module.exports = {
     DefaultSettings,
     Initiate,

@@ -1,3 +1,4 @@
+/** @module discord */
 const { register, Client } = require('discord-rpc');
 
 let Discord = {};
@@ -6,9 +7,9 @@ const scopes = ['rpc'];
 /**
  * Constructor for Discord integration.
  * @function Initiate
- * @param {string} clientId Client ID to access Discord RPC.
+ * @param {import('./settings').TSettings} settings Extension settings object.
  */
-function Initiate(clientId) {
+function Initiate(settings) {
     const client = new Client({
         transport: 'ipc',
     });
@@ -18,7 +19,7 @@ function Initiate(clientId) {
         Discord = client;
     });
 
-    Connect(client, clientId);
+    Connect(client, settings.discordClientId);
 }
 
 /**
@@ -46,7 +47,6 @@ async function Connect(client, clientId) {
  */
 function Self() { return Discord; }
 
-/** @namespace discord */
 module.exports = {
     Self,
     Initiate,

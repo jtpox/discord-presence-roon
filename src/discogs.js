@@ -1,5 +1,5 @@
+/** @module discogs */
 const Discogs = require('disconnect').Client;
-const RoonSettings = require('./settings');
 
 let Client;
 let Settings;
@@ -8,14 +8,14 @@ let Settings;
  * Constructor for Discogs integration.
  * @function Initiate
  * @param {import('@roonlabs/node-roon-api').RoonApi} roon The Roon instance.
- * @param {string} discogsUserToken User Token to access the Discogs API.
+ * @param {import('./settings').TSettings} settings Extension settings object.
  */
-function Initiate(roon, discogsUserToken) {
-    Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
+function Initiate(roon, settings) {
+    Settings = settings;
     if(!Settings.discogsEnable) return;
 
     Client = new Discogs({
-        userToken: discogsUserToken,
+        userToken: Settings.discogsUserToken,
     }).database();
 }
 
@@ -39,7 +39,6 @@ async function Search(artist, track) {
     return results.results[0] || {};
 }
 
-/** @namespace discogs */
 module.exports = {
     Initiate,
     Search,

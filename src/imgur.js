@@ -3,8 +3,6 @@ const { join } = require('path');
 const { Readable } = require('stream');
 const { ImgurClient } = require('imgur');
 
-const Settings = require('./settings');
-
 let Client;
 let Roon;
 let ImgurClientId;
@@ -18,22 +16,18 @@ let Album = {
  * Constructor for Imgur integration.
  * @function Initiate
  * @param {import('@roonlabs/node-roon-api').RoonApi} roon The Roon instance.
- * @param {string} imgurClientId The Imgur Client ID to access Imgur API.
- * @param {string} imgurClientSecret The Imgur Client Secret to access Imgur API.
- * @param {string} imgurAlbumId The Imgur Album ID to access the anonymous Imgur album.
- * @param {string} imgurAlbumDeleteHash The Imgur Album ID to access the anonymous Imgur album.
+ * @param {import('./settings').TSettings} settings Extension settings object.
  */
-function Initiate(roon, imgurClientId, imgurClientSecret, imgurAlbumId, imgurAlbumDeleteHash) {
+function Initiate(roon, settings) {
     Roon = roon;
-
     Client = new ImgurClient({
-        clientId: imgurClientId,
-        clientSecret: imgurClientSecret,
+        clientId: settings.imgurClientId,
+        clientSecret: settings.imgurClientSecret,
     });
-    ImgurClientId = imgurClientId;
+    ImgurClientId = settings.imgurClientId;
 
-    Album.id = imgurAlbumId;
-    Album.deletehash = imgurAlbumDeleteHash;
+    Album.id = settings.imgurAlbumId;
+    Album.deletehash = settings.imgurAlbumDeleteHash;
     console.log(`Imgur: Using Album ${Album.id}`);
 }
 
@@ -126,7 +120,7 @@ async function CreateAlbum() {
     return data;
 }
 
-/** @namespace imgur */
+/** @module imgur */
 module.exports = {
     Initiate,
     UploadToAlbum,

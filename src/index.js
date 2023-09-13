@@ -1,3 +1,4 @@
+/** @module main */
 const { version, author, homepage } = require('../package.json');
 const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
@@ -51,9 +52,9 @@ function InitiateIntegrations() {
     console.log('Extension: Reloading settings');
     Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
 
-    Discord.Initiate(Settings.discordClientId);
-    Discogs.Initiate(roon, Settings.discogsUserToken);
-    Imgur.Initiate(roon, Settings.imgurClientId, Settings.imgurClientSecret, Settings.imgurAlbumId, Settings.imgurAlbumDeleteHash);
+    Discord.Initiate(Settings);
+    Discogs.Initiate(roon, Settings);
+    Imgur.Initiate(roon, Settings);
 }
 
 /**
@@ -148,7 +149,6 @@ if(require.main === module) {
     Initiate();
 }
 
-/** @namespace discordPresenceRoon */
 module.exports = {
     Initiate,
     InitiateIntegrations,
