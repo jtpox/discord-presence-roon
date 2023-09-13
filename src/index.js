@@ -102,7 +102,6 @@ async function SongChanged(data) {
     }
 
     if(data.state === 'playing') {
-        console.log(data);
         const startTimestamp = Math.round((new Date().getTime() / 1000) - (data.now_playing.seek_position || 0));
         const endTimestamp = Math.round(startTimestamp + data.now_playing.length);
 
