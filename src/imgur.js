@@ -56,7 +56,7 @@ async function UploadToAlbum(buffer, image_key) {
  * @function GetAlbumArt
  * @async
  * @param {string} image_key 
- * @param {*} GetImageFn 
+ * @param {function(image_key:string) => Promise<Buffer|string>} GetImageFn 
  * @returns {string} URL of album art or default iamge tag from Discord assets.
  */
 async function GetAlbumArt(image_key, GetImageFn) {
