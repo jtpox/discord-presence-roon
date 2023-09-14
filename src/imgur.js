@@ -3,8 +3,6 @@ const { join } = require('path');
 const { Readable } = require('stream');
 const { ImgurClient } = require('imgur');
 
-const Settings = require('./settings');
-
 let Client;
 let Roon;
 let ImgurClientId;
@@ -14,20 +12,33 @@ let Album = {
     deletehash: null,
 };
 
-function Initiate(roon, imgurClientId, imgurClientSecret, imgurAlbumId, imgurAlbumDeleteHash) {
+/**
+ * Constructor for Imgur integration.
+ * @function Initiate
+ * @param {import('@roonlabs/node-roon-api').RoonApi} roon The Roon instance.
+ * @param {import('./settings').TSettings} settings Extension settings object.
+ */
+function Initiate(roon, settings) {
     Roon = roon;
-
     Client = new ImgurClient({
-        clientId: imgurClientId,
-        clientSecret: imgurClientSecret,
+        clientId: settings.imgurClientId,
+        clientSecret: settings.imgurClientSecret,
     });
-    ImgurClientId = imgurClientId;
+    ImgurClientId = settings.imgurClientId;
 
-    Album.id = imgurAlbumId;
-    Album.deletehash = imgurAlbumDeleteHash;
+    Album.id = settings.imgurAlbumId;
+    Album.deletehash = settings.imgurAlbumDeleteHash;
     console.log(`Imgur: Using Album ${Album.id}`);
 }
 
+/**
+ * Upload an image to the anonymour Imgur album.
+ * @function UploadToAlbum
+ * @async
+ * @param {Bufer} buffer Buffer of the image file.
+ * @param {string} image_key The name of the image file.
+ * @returns {string} URL of the image.
+ */
 async function UploadToAlbum(buffer, image_key) {
     const response = await Client.upload({
         image: Readable.from(buffer),
@@ -40,6 +51,14 @@ async function UploadToAlbum(buffer, image_key) {
     return response.data.link;
 }
 
+/**
+ * Get album art from anonymous Imgur album.
+ * @function GetAlbumArt
+ * @async
+ * @param {string} image_key 
+ * @param {function(image_key:string) => Promise<Buffer|string>} GetImageFn 
+ * @returns {string} URL of album art or default iamge tag from Discord assets.
+ */
 async function GetAlbumArt(image_key, GetImageFn) {
     let albumArt = 'roon_labs_logo';
     let album;
@@ -71,6 +90,11 @@ async function GetAlbumArt(image_key, GetImageFn) {
     return albumArt;
 }
 
+/**
+ * Create an anonymous Imgur album.
+ * @function CreateAlbum
+ * @async 
+ */
 async function CreateAlbum() {
     const formData = new FormData();
     formData.append('title', 'Album Covers for Roon Discord Integration');
@@ -96,6 +120,7 @@ async function CreateAlbum() {
     return data;
 }
 
+/** @module imgur */
 module.exports = {
     Initiate,
     UploadToAlbum,

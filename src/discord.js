@@ -1,10 +1,17 @@
-const { Client } = require('@xhayper/discord-rpc');
+/** @module discord */
+const { register, Client } = require('discord-rpc');
 
 let Discord = {};
+const scopes = ['rpc'];
 
-function Initiate(clientId) {
+/**
+ * Constructor for Discord integration.
+ * @function Initiate
+ * @param {import('./settings').TSettings} settings Extension settings object.
+ */
+function Initiate(settings) {
     const client = new Client({
-        clientId: clientId,
+        transport: 'ipc',
     });
 
     client.on('ready', () => {
@@ -12,17 +19,32 @@ function Initiate(clientId) {
         Discord = client;
     });
 
-    Connect(client);
+    Connect(client, settings.discordClientId);
 }
 
-async function Connect(client, count = 0) {
+/**
+ * Connect to the Discord RPC.
+ * @function Connect
+ * @async
+ * @param {Client} client The Client instance for Discord RPC.
+ * @param {string} clientId The Client ID to access Discord RPC.
+ */
+async function Connect(client, clientId) {
     try {
-        await client.login();
+        client.login({
+            clientId,
+            // scopes,
+        }).catch(console.error);
     } catch {
         console.log('Discord: Timed out. Please edit settings and try again.');
     }
 }
 
+/**
+ * Get the Discord RPC instance.
+ * @function Self
+ * @returns {(Client|object)} Returns the Client when a connection has been established, or an empty object otherwise.
+ */
 function Self() { return Discord; }
 
 module.exports = {

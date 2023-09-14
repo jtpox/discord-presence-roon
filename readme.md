@@ -17,14 +17,19 @@ Unfortunately, this script has to be ran on the same instance that a Discord app
 
 ### Getting the Script
 ```bash
+# NOTE: A config.json will be created by Roon in the current working directory of your terminal.
+# To use the same settings, make sure the current working directory is where config.json is in.
+npx jtpox/discord-presence-roon
+```
+
+Or, you can clone the repo and run it locally.
+
+```bash
 git clone https://github.com/jtpox/discord-presence-roon.git
 cd discord-presence-roon
 npm install
-```
 
-### Running
-```bash
-# Run in the folder.
+# Running the extension.
 node .
 ```
 
@@ -38,6 +43,8 @@ After enabling, click on the `Settings` button and a modal will open. Fill in al
 ![Settings Modal](assets/settings.png)
 
 ### Discord Settings
+**NOTE:** This step is not necessary if you want to use the Discord Client ID that is provided by default.
+
 You will need to create a new Discord Application through the [Discord Developer Portal](https://discord.com/developers/applications). After creating the application, select the app and go to the settings page for OAuth2.
 Copy the `Client ID`.
 

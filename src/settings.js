@@ -1,8 +1,23 @@
+/** @module settings */
 const RoonApiSettings = require('node-roon-api-settings');
 
+/**
+ * Default settings object.
+ * @typedef {Object} TSettings
+ * @property {string} discordClientId - Client ID to access the Discord RPC.
+ * @property {string} roonZones - Zones to monitor. Separate by commas and ordered by priority.
+ * @property {boolean} discogsEnable - Enable/Disable Discogs integration.
+ * @property {string} discogsUserToken - User Token to access the Discogs API.
+ * @property {boolean} imgurEnable - Enable/Disable Imgur integration.
+ * @property {string} imgurClientId - Client ID to access the Imgur API.
+ * @property {string} imgurClientSecret - Client Secret to access the Imgur API.
+ * @property {string} imgurAlbumId - ID of the anonymous Imgur album.
+ * @property {string} imgurAlbumDeleteHash - Delete Hash ot the anonymous Imgur album.
+ */
+/** @type {TSettings} */
 const DefaultSettings = {
-    discordClientId: '',
-    roonZones: '',
+    discordClientId: '1149335969523318975',
+    roonZones: 'Desktop,Living Room',
 
     discogsEnable: false,
     discogsUserToken: '',
@@ -17,11 +32,22 @@ const DefaultSettings = {
 let Roon;
 let Settings;
 
+/**
+ * Constructor for Roon settings.
+ * @function Initiate
+ * @param {import('@roonlabs/node-roon-api').RoonApi} roon The Roon instance.
+ */
 function Initiate(roon) {
     Roon = roon;
     Settings = Roon.load_config('settings') || DefaultSettings;
 }
 
+/**
+ * Sets up the settings service to be used by Roon.
+ * @function Service
+ * @param {Function} InitiateIntegrations The function to restart all integrations.
+ * @returns {RoonApiSettings} The RoonApiSettings instance.
+ */
 function Service(InitiateIntegrations) {
     return new RoonApiSettings(Roon, {
         get_settings: (cb) => {
@@ -38,6 +64,11 @@ function Service(InitiateIntegrations) {
     });
 }
 
+/**
+ * Create the settings form layout.
+ * @function Layout
+ * @returns {object} The object to create the settings form on Roon.
+ */
 function Layout() {
     let layout = {
         values: Settings,

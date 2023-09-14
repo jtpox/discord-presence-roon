@@ -1,18 +1,32 @@
+/** @module discogs */
 const Discogs = require('disconnect').Client;
-const RoonSettings = require('./settings');
 
 let Client;
 let Settings;
 
-function Initiate(roon, discogsUserToken) {
-    Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
+/**
+ * Constructor for Discogs integration.
+ * @function Initiate
+ * @param {import('@roonlabs/node-roon-api').RoonApi} roon The Roon instance.
+ * @param {import('./settings').TSettings} settings Extension settings object.
+ */
+function Initiate(roon, settings) {
+    Settings = settings;
     if(!Settings.discogsEnable) return;
 
     Client = new Discogs({
-        userToken: discogsUserToken,
+        userToken: Settings.discogsUserToken,
     }).database();
 }
 
+/**
+ * Search through Discogs database using artist name and track name.
+ * @async
+ * @function Search
+ * @param {string} artist Name of artist.
+ * @param {string} track Name of track.
+ * @returns {object} Data retrieved from Discogs. It may return an empty object.
+ */
 async function Search(artist, track) {
     if(!Settings.discogsEnable) return {};
     
