@@ -55,39 +55,38 @@ async function UploadToAlbum(buffer, image_key) {
  * Get album art from anonymous Imgur album.
  * @function GetAlbumArt
  * @async
- * @param {string} image_key 
+ * @param {string} image_key Key of the image in the Imgur album.
  * @param {function(image_key:string) => Promise<Buffer|string>} GetImageFn 
- * @returns {string} URL of album art or default iamge tag from Discord assets.
+ * @returns {Promise<string>} URL of album art or default iamge tag from Discord assets.
  */
 async function GetAlbumArt(image_key, GetImageFn) {
-    let albumArt = 'roon_labs_logo';
-    let album;
-    try {
-        album = await Client.getAlbum(Album.id);
-        if(!album.success) {
-            Album = await CreateAlbum();
+    return new Promise(async (resolve, reject) => {
+        let album;
+        try {
             album = await Client.getAlbum(Album.id);
+            if(!album.success) {
+                Album = await CreateAlbum();
+                album = await Client.getAlbum(Album.id);
+            }
+        } catch (err) {}
+
+        try {
+            const { images } = album.data;
+            const art = images.find((image) => image.title == image_key);
+
+            // Art doesn't exist, so upload it.
+            if(!art) {
+                const imageBuffer = await GetImageFn(image_key);
+                const upload = await UploadToAlbum(imageBuffer, image_key);
+                resolve(upload);
+            }
+
+            if(art) resolve(art.link);
+        } catch (err) {
+            console.log(err);
+            reject('roon_labs_logo');
         }
-    } catch (err) {}
-
-    try {
-        const { images } = album.data;
-        const art = images.find((image) => image.title == image_key);
-
-        // Art doesn't exist, so upload it.
-        if(!art) {
-            // console.log('No Art');
-            const imageBuffer = await GetImageFn(image_key);
-            const upload = await UploadToAlbum(imageBuffer, image_key);
-            albumArt = upload;
-        }
-
-        if(art) return art.link;
-    } catch (err) {
-        console.log(err);
-    }
-
-    return albumArt;
+    });
 }
 
 /**

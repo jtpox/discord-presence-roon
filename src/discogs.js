@@ -25,18 +25,20 @@ function Initiate(roon, settings) {
  * @function Search
  * @param {string} artist Name of artist.
  * @param {string} track Name of track.
- * @returns {object} Data retrieved from Discogs. It may return an empty object.
+ * @returns {Promise<object>} Data retrieved from Discogs. It may return an empty object.
  */
 async function Search(artist, track) {
-    if(!Settings.discogsEnable) return {};
+    return new Promise(async (resolve, reject) => {
+        if(!Settings.discogsEnable) reject({});
     
-    let results = await Client.search({
-        artist,
-        track,
-    });
+        let results = await Client.search({
+            artist,
+            track,
+        });
 
-    // Retrieve the first result.
-    return results.results[0] || {};
+        // Retrieve the first result.
+        resolve(results.results[0] || {});
+    });
 }
 
 module.exports = {
