@@ -87,6 +87,10 @@ function Unpaired(core) {
     Discord.Self().clearActivity();
 }
 
+let PreviousAlbumArt = {
+    imageKey: 'roon_labs_logo',
+    imageUrl: '',
+};
 /**
  * Song changed event which will update the Discord user activity.
  * @function SongChanged
@@ -100,40 +104,51 @@ async function SongChanged(core, data) {
     }
 
     if(data.state === 'playing') {
-        // const startTimestamp = Math.round((new Date().getTime() / 1000) - (data.now_playing.seek_position || 0));
-        // const endTimestamp = Math.round(startTimestamp + data.now_playing.length);
-        const endTimestamp = Math.round((new Date().getTime() / 1000) + data.now_playing.length - data.now_playing.seek_position);
+        const { image_key, length, seek_position } = data.now_playing;
+        const endTimestamp = Math.round((new Date().getTime() / 1000) + length - seek_position);
 
         const activity = {
             type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
             details: data.now_playing.one_line.line1.substring(0, 128),
             state: data.now_playing.three_line.line3.substring(0, 128),
-            // startTimestamp,
             endTimestamp,
             instance: false,
-            largeImageKey: 'roon_labs_logo',
+            largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : 'roon_labs_logo',
             largeImageText: `Listening at: ${data.display_name}`,
         };
+
         Discord.Self().setActivity(activity);
 
-        if(Settings.imgurEnable) {
-            /* const imgurAlbum = await Imgur.GetAlbumArt(data.now_playing.image_key, GetImage(new RoonApiImage(core)));
-            albumArt = imgurAlbum; */
-            Imgur.GetAlbumArt(data.now_playing.image_key, GetImage(new RoonApiImage(core))).then((art) => {
-                activity.largeImageKey = art;
-                Discord.Self().setActivity(activity);
-            }).catch(() => {});
-        }
-
-        // Make sure that Imgur is prioritized even when both are enabled.
+        /**
+         * Imgur API doesn't update immediately, so images might be uploaded more than once.
+         * This will help prevent the upload or search of the same album images multiple times.
+         */
         if(
-            Settings.discogsEnable
-            && !Settings.imgurEnable
+            data.now_playing.image_key !== PreviousAlbumArt.imageKey
+            && (Settings.imgurEnable || Settings.discogsEnable)
         ) {
-            Discogs.Search(data.now_playing.three_line.line2, data.now_playing.three_line.line1).then((result) => {
-                if(result.cover_image) activity.largeImageKey = result.cover_image;
-                Discord.Self().setActivity(activity);
-            }).catch(() => {});
+            if(Settings.imgurEnable) {
+                Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
+                    PreviousAlbumArt.imageKey = image_key;
+                    PreviousAlbumArt.imageUrl = art;
+                    activity.largeImageKey = art;
+                    Discord.Self().setActivity(activity);
+                }).catch(() => {});
+            }
+
+            if(
+                Settings.discogsEnable
+                && !Settings.imgurEnable
+            ) {
+                Discogs.Search(data.now_playing.three_line.line2, data.now_playing.three_line.line1).then((result) => {
+                    if(result.cover_image) {
+                        PreviousAlbumArt.imageKey = image_key;
+                        PreviousAlbumArt.imageUrl = result.cover_image;
+                        activity.largeImageKey = result.cover_image;
+                        Discord.Self().setActivity(activity);
+                    }
+                }).catch(() => {});
+            }
         }
     }
 }
