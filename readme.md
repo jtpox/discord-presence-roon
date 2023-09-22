@@ -50,7 +50,11 @@ Copy the `Client ID`.
 
 Edit the Extension Settings and save.
 
+#### Default Album Image
+A default image will be displayed when no album image is detected. If you are not using the default Discord Client ID that was given, you can use your own default image by uploading an art asset on your application's page at the Discord Developer Portal (`My Applications > Rich Presence > Art Assets`). You have to name the image `roon_labs_logo`.
+
 ### Album Images
+
 #### Imgur Integration
 This feature will upload the album cover of the song you are listening to an anonymous Imgur album, which will then be displayed on the Discord presence.
 
