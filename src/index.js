@@ -126,7 +126,8 @@ async function SongChanged(core, data) {
          * This will help prevent the upload or search of the same album images multiple times.
          */
         if(
-            data.now_playing.image_key !== PreviousAlbumArt.imageKey
+            image_key
+            && image_key !== PreviousAlbumArt.imageKey
             && (Settings.imgurEnable || Settings.discogsEnable)
         ) {
             if(Settings.imgurEnable) {
