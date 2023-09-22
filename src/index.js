@@ -106,11 +106,13 @@ async function SongChanged(core, data) {
     if(data.state === 'playing') {
         const { image_key, length, seek_position } = data.now_playing;
         const endTimestamp = Math.round((new Date().getTime() / 1000) + length - seek_position);
+        const state = (data.now_playing.three_line.line3.substring(0, 128)
+            + (data.now_playing.three_line.line3.length === 1 ? " " : "")) || undefined;
 
         const activity = {
             type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
             details: data.now_playing.one_line.line1.substring(0, 128),
-            state: data.now_playing.three_line.line3.substring(0, 128),
+            state,
             endTimestamp,
             instance: false,
             largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : 'roon_labs_logo',
