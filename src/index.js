@@ -61,17 +61,44 @@ function InitiateIntegrations() {
  */
 function Paired(core) {
     let transport = core.services.RoonApiTransport;
+    console.log('Roon Paired');
+
+    let zone_info = {
+        zone_id: null,
+        display_name: null,
+        outputs: [],
+        state: '',
+        is_next_allowed: true,
+        is_previous_allowed: true,
+        is_pause_allowed: false,
+        is_play_allowed: true,
+        is_seek_allowed: true,
+        queue_items_remaining: 0,
+        queue_time_remaining: 0,
+        seek_position: 0,
+        settings: [],
+        now_playing: [],
+    };
 
     transport.subscribe_zones((cmd, data) => {
         if(Discord.Self() === undefined) return;
 
-        if(cmd === 'Changed' && data.hasOwnProperty('zones_changed')) {
+        if(cmd !== 'Changed') return;
+
+        if(data.hasOwnProperty('zones_changed')) {
             const zones_to_check = Settings.roonZones.split(',');
             const zones = data.zones_changed.filter((data) => zones_to_check.includes(data.display_name));
-
             const priority_zone = zones.sort((a, b) => zones_to_check.indexOf(a.display_name) - zones_to_check.indexOf(b.display_name));
+            if(priority_zone.length < 1) return;
+            zone_info = { ...zone_info, ...priority_zone[0] };
+            SongChanged(core, zone_info);
+        }
 
-            if(priority_zone.length > 0) SongChanged(core, priority_zone[0]);
+        if(data.hasOwnProperty('zones_seek_changed')) {
+            const correct_zone = data.zones_seek_changed.find(el => el.zone_id === zone_info.zone_id);
+            if(!correct_zone) return;
+            zone_info = { ...zone_info, ...correct_zone };
+            SongChanged(core, zone_info);
         }
 
         if(cmd === 'Changed' && data.hasOwnProperty('zones_removed')) Discord.Self().clearActivity();
