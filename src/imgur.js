@@ -48,6 +48,10 @@ async function UploadToAlbum(buffer, image_key) {
         type: 'stream',
     });
 
+    if(response.status !== 200) {
+        console.log(`Imgur API Error: ${response.data}`);
+        return 'roon_labs_logo'; 
+    }
     return response.data.link;
 }
 
@@ -75,13 +79,20 @@ async function GetAlbumArt(image_key, GetImageFn) {
             const art = images.find((image) => image.title == image_key);
 
             // Art doesn't exist, so upload it.
+            let link = '';
             if(!art) {
                 const imageBuffer = await GetImageFn(image_key);
                 const upload = await UploadToAlbum(imageBuffer, image_key);
-                resolve(upload);
+                link = upload;
             }
 
-            if(art) resolve(art.link);
+            if(art) link = art.link;
+
+            PreviousImage = {
+                key: image_key,
+                url: link,
+            };
+            resolve(link);
         } catch (err) {
             console.log(err);
             reject('roon_labs_logo');
