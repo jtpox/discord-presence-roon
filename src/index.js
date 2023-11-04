@@ -5,6 +5,7 @@ const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
 
+const { DEFAULT_IMAGE } = require('./common');
 const RoonSettings = require('./settings');
 const Discord = require('./discord');
 const Discogs = require('./discogs');
@@ -61,20 +62,59 @@ function InitiateIntegrations() {
  */
 function Paired(core) {
     let transport = core.services.RoonApiTransport;
+    console.log('Roon Paired');
+
+    let zone_info = {
+        zone_id: null,
+        display_name: null,
+        outputs: [],
+        state: '',
+        is_next_allowed: true,
+        is_previous_allowed: true,
+        is_pause_allowed: false,
+        is_play_allowed: true,
+        is_seek_allowed: true,
+        queue_items_remaining: 0,
+        queue_time_remaining: 0,
+        seek_position: 0,
+        settings: {},
+        now_playing: {},
+    };
 
     transport.subscribe_zones((cmd, data) => {
-        if(Discord.Self() === undefined) return;
+        if(!['Changed', 'Subscribed'].includes(cmd)) return;
 
-        if(cmd === 'Changed' && data.hasOwnProperty('zones_changed')) {
-            const zones_to_check = Settings.roonZones.split(',');
-            const zones = data.zones_changed.filter((data) => zones_to_check.includes(data.display_name));
-
-            const priority_zone = zones.sort((a, b) => zones_to_check.indexOf(a.display_name) - zones_to_check.indexOf(b.display_name));
-
-            if(priority_zone.length > 0) SongChanged(core, priority_zone[0]);
+        if(data.hasOwnProperty('zones_removed')) {
+            Discord.Self().clearActivity();
+            return;
         }
 
-        if(cmd === 'Changed' && data.hasOwnProperty('zones_removed')) Discord.Self().clearActivity();
+        if(
+            data.hasOwnProperty('zones')
+            || data.hasOwnProperty('zones_changed') 
+            || data.hasOwnProperty('zones_added')
+        ) {
+            const zones_to_check = Settings.roonZones.split(',');
+            const available_zones = data.zones || data.zones_changed || data.zones_added;
+            const zones = available_zones.filter((zone_data) => zones_to_check.includes(zone_data.display_name));
+            const priority_zone = zones.sort((a, b) => zones_to_check.indexOf(a.display_name) - zones_to_check.indexOf(b.display_name));
+
+            if(priority_zone.length < 1) return;
+
+            zone_info = { ...zone_info, ...priority_zone[0] };
+        }
+
+        if(data.hasOwnProperty('zones_seek_changed')) {
+            const correct_zone = data.zones_seek_changed.find(el => el.zone_id === zone_info.zone_id);
+            if(!correct_zone) return;
+
+            zone_info.now_playing.seek_position = correct_zone.seek_position;
+            zone_info = { ...zone_info, ...correct_zone };
+        }
+
+        if(Discord.Self() === undefined) return;
+
+        SongChanged(core, zone_info);
     });
 }
 
@@ -88,8 +128,9 @@ function Unpaired(core) {
 }
 
 let PreviousAlbumArt = {
-    imageKey: 'roon_labs_logo',
-    imageUrl: '',
+    imageKey: DEFAULT_IMAGE,
+    imageUrl: DEFAULT_IMAGE,
+    uploading: false,
 };
 /**
  * Song changed event which will update the Discord user activity.
@@ -99,9 +140,7 @@ let PreviousAlbumArt = {
  * @param {object} data The data provided by Roon zones.
  */
 async function SongChanged(core, data) {
-    if(data.state === 'paused') {
-        Discord.Self().clearActivity();
-    }
+    if(data.state === 'paused') Discord.Self().clearActivity();
 
     if(data.state === 'playing') {
         const {
@@ -114,33 +153,32 @@ async function SongChanged(core, data) {
 
         const endTimestamp = Math.round((new Date().getTime() / 1000) + length - seek_position);
         const state = (three_line.line3.substring(0, 128)
-            + (three_line.line3.length === 1 ? " " : "")) || undefined;
+            + (three_line.line3.length === 1 ? ' ' : '')) || undefined;
 
         const activity = {
-            type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
+            // type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
             details: one_line.line1.substring(0, 128),
             state,
             endTimestamp,
             instance: false,
-            largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : 'roon_labs_logo',
+            largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : DEFAULT_IMAGE,
             largeImageText: `Listening at: ${data.display_name}`,
         };
-
         Discord.Self().setActivity(activity);
 
-        /**
-         * Imgur API doesn't update immediately, so images might be uploaded more than once.
-         * This will help prevent the upload or search of the same album images multiple times.
-         */
         if(
             image_key
             && image_key !== PreviousAlbumArt.imageKey
-            && (Settings.imgurEnable || Settings.discogsEnable)
+            && !PreviousAlbumArt.uploading
         ) {
-            if(Settings.imgurEnable) {
+            if(
+                Settings.imgurEnable
+            ) {
+                PreviousAlbumArt.uploading = true;
                 Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
                     PreviousAlbumArt.imageKey = image_key;
                     PreviousAlbumArt.imageUrl = art;
+                    PreviousAlbumArt.uploading = false;
                     activity.largeImageKey = art;
                     Discord.Self().setActivity(activity);
                 }).catch(() => {});
