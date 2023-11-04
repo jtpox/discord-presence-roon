@@ -5,6 +5,7 @@ const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
 
+const { DEFAULT_IMAGE } = require('./common');
 const RoonSettings = require('./settings');
 const Discord = require('./discord');
 const Discogs = require('./discogs');
@@ -81,19 +82,23 @@ function Paired(core) {
     };
 
     transport.subscribe_zones((cmd, data) => {
-        if(Discord.Self() === undefined) return;
-
-        if(cmd !== 'Changed') return;
+        if(!['Changed', 'Subscribed'].includes(cmd)) return;
 
         if(data.hasOwnProperty('zones_removed')) {
             Discord.Self().clearActivity();
             return;
         }
 
-        if(data.hasOwnProperty('zones_changed')) {
+        if(
+            data.hasOwnProperty('zones')
+            || data.hasOwnProperty('zones_changed') 
+            || data.hasOwnProperty('zones_added')
+        ) {
             const zones_to_check = Settings.roonZones.split(',');
-            const zones = data.zones_changed.filter((data) => zones_to_check.includes(data.display_name));
+            const available_zones = data.zones || data.zones_changed || data.zones_added;
+            const zones = available_zones.filter((zone_data) => zones_to_check.includes(zone_data.display_name));
             const priority_zone = zones.sort((a, b) => zones_to_check.indexOf(a.display_name) - zones_to_check.indexOf(b.display_name));
+
             if(priority_zone.length < 1) return;
 
             zone_info = { ...zone_info, ...priority_zone[0] };
@@ -102,9 +107,12 @@ function Paired(core) {
         if(data.hasOwnProperty('zones_seek_changed')) {
             const correct_zone = data.zones_seek_changed.find(el => el.zone_id === zone_info.zone_id);
             if(!correct_zone) return;
+
             zone_info.now_playing.seek_position = correct_zone.seek_position;
             zone_info = { ...zone_info, ...correct_zone };
         }
+
+        if(Discord.Self() === undefined) return;
 
         SongChanged(core, zone_info);
     });
@@ -120,8 +128,8 @@ function Unpaired(core) {
 }
 
 let PreviousAlbumArt = {
-    imageKey: 'roon_labs_logo',
-    imageUrl: 'roon_labs_logo',
+    imageKey: DEFAULT_IMAGE,
+    imageUrl: DEFAULT_IMAGE,
     uploading: false,
 };
 /**
@@ -145,7 +153,7 @@ async function SongChanged(core, data) {
 
         const endTimestamp = Math.round((new Date().getTime() / 1000) + length - seek_position);
         const state = (three_line.line3.substring(0, 128)
-            + (three_line.line3.length === 1 ? " " : "")) || undefined;
+            + (three_line.line3.length === 1 ? ' ' : '')) || undefined;
 
         const activity = {
             // type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
@@ -153,7 +161,7 @@ async function SongChanged(core, data) {
             state,
             endTimestamp,
             instance: false,
-            largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : 'roon_labs_logo',
+            largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : DEFAULT_IMAGE,
             largeImageText: `Listening at: ${data.display_name}`,
         };
         Discord.Self().setActivity(activity);

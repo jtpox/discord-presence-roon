@@ -1,7 +1,7 @@
 /** @module discord */
 const { register, Client } = require('discord-rpc');
 
-let Discord = {};
+let Discord = undefined;
 const scopes = ['rpc'];
 
 /**
@@ -43,7 +43,7 @@ async function Connect(client, clientId) {
 /**
  * Get the Discord RPC instance.
  * @function Self
- * @returns {(Client|object)} Returns the Client when a connection has been established, or an empty object otherwise.
+ * @returns {(Client|undefined)} Returns the Client when a connection has been established, or an empty object otherwise.
  */
 function Self() { return Discord; }
 

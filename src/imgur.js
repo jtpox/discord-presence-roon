@@ -3,6 +3,8 @@ const { join } = require('path');
 const { Readable } = require('stream');
 const { ImgurClient } = require('imgur');
 
+const { DEFAULT_IMAGE } = require('./common');
+
 let Client;
 let Roon;
 let ImgurClientId;
@@ -50,7 +52,7 @@ async function UploadToAlbum(buffer, image_key) {
 
     if(response.status !== 200) {
         console.log(`Imgur API Error: ${response.data}`);
-        return 'roon_labs_logo'; 
+        return DEFAULT_IMAGE; 
     }
     return response.data.link;
 }
@@ -95,7 +97,7 @@ async function GetAlbumArt(image_key, GetImageFn) {
             resolve(link);
         } catch (err) {
             console.log(err);
-            reject('roon_labs_logo');
+            reject(DEFAULT_IMAGE);
         }
     });
 }
