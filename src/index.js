@@ -4,8 +4,9 @@ const { version, author, homepage } = require('../package.json');
 const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
+const semver = require('semver');
 
-const { DEFAULT_IMAGE } = require('./common');
+const { DEFAULT_IMAGE, UPDATE_CHECK } = require('./common');
 const RoonSettings = require('./settings');
 const Discord = require('./discord');
 const Discogs = require('./discogs');
@@ -32,6 +33,7 @@ let Settings;
  */
 function Initiate() {
 
+    CheckVersion();
     RoonSettings.Initiate(roon);
     InitiateIntegrations();
 
@@ -40,6 +42,8 @@ function Initiate() {
         provided_services: [RoonSettings.Service(InitiateIntegrations)],
     });
     roon.start_discovery();
+
+    setInterval(CheckVersion, UPDATE_CHECK);
 }
 
 /**
@@ -53,6 +57,18 @@ function InitiateIntegrations() {
     Discord.Initiate(Settings);
     Discogs.Initiate(roon, Settings);
     Imgur.Initiate(roon, Settings);
+}
+
+/**
+ * Check for latest version
+ * @function CheckVersion
+ */
+async function CheckVersion() {
+    const latest_package_json = await fetch('https://raw.githubusercontent.com/jtpox/discord-presence-roon/main/package.json');
+    if(!latest_package_json.ok) return;
+
+    const package = await latest_package_json.json();
+    if(semver.gt(package.version, version)) console.log(`New discord-presence-roon update available! | Running version: ${version} | Latest version: ${package.version}`);
 }
 
 /**

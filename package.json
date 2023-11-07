@@ -27,6 +27,7 @@
     "node-roon-api-image": "github:roonlabs/node-roon-api-image",
     "node-roon-api-settings": "github:roonlabs/node-roon-api-settings",
     "node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
+    "semver": "^7.5.4",
     "tslib": "^2.6.2"
   },
   "devDependencies": {
