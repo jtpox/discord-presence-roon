@@ -12,6 +12,8 @@ const Discord = require('./discord');
 const Discogs = require('./discogs');
 const Imgur = require('./imgur');
 
+const { Info, Debug, Warn, Error } = require('./console');
+
 var roon = new RoonApi({
     extension_id: 'com.jtpox.discord-roon',
     display_name: `Discord Presence Integration`,
@@ -51,7 +53,7 @@ function Initiate() {
  * @function InitiateIntegrations
  */
 function InitiateIntegrations() {
-    console.log('Extension: Reloading settings');
+    Info('Extension: Reloading settings');
     Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
 
     Discord.Initiate(Settings);
@@ -68,7 +70,7 @@ async function CheckVersion() {
     if(!latest_package_json.ok) return;
 
     const package = await latest_package_json.json();
-    if(semver.gt(package.version, version)) console.log(`New discord-presence-roon update available! | Running version: ${version} | Latest version: ${package.version}`);
+    if(semver.gt(package.version, version)) Warn(`New discord-presence-roon update available! | Running version: ${version} | Latest version: ${package.version}`);
 }
 
 /**
@@ -78,7 +80,7 @@ async function CheckVersion() {
  */
 function Paired(core) {
     let transport = core.services.RoonApiTransport;
-    console.log('Roon Paired');
+    Info('Roon Paired');
 
     let zone_info = {
         zone_id: null,

@@ -1,5 +1,6 @@
 /** @module discord */
 const { register, Client } = require('discord-rpc');
+const { Info, Error } = require('./console');
 
 let Discord = undefined;
 const scopes = ['rpc'];
@@ -15,7 +16,7 @@ function Initiate(settings) {
     });
 
     client.on('ready', () => {
-        console.log(`Discord: Authed for user ${client.user.username}`);
+        Info(`Discord: Authed for user ${client.user.username}`);
         Discord = client;
     });
 
@@ -36,7 +37,7 @@ async function Connect(client, clientId) {
             // scopes,
         }).catch(console.error);
     } catch {
-        console.log('Discord: Timed out. Please edit settings and try again.');
+        Error('Discord: Timed out. Please edit settings and try again.');
     }
 }
 

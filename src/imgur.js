@@ -3,6 +3,7 @@ const { join } = require('path');
 const { Readable } = require('stream');
 const { ImgurClient } = require('imgur');
 
+const { Info, Error } = require('./console');
 const { DEFAULT_IMAGE } = require('./common');
 
 let Client;
@@ -30,7 +31,7 @@ function Initiate(roon, settings) {
 
     Album.id = settings.imgurAlbumId;
     Album.deletehash = settings.imgurAlbumDeleteHash;
-    console.log(`Imgur: Using Album ${Album.id}`);
+    Info(`Imgur: Using Album ${Album.id}`);
 }
 
 /**
@@ -51,7 +52,7 @@ async function UploadToAlbum(buffer, image_key) {
     });
 
     if(response.status !== 200) {
-        console.log(`Imgur API Error: ${response.data}`);
+        Error(`Imgur API Error: ${response.data}`);
         return DEFAULT_IMAGE; 
     }
     return response.data.link;
@@ -96,7 +97,7 @@ async function GetAlbumArt(image_key, GetImageFn) {
             };
             resolve(link);
         } catch (err) {
-            console.log(err);
+            Error(err);
             reject(DEFAULT_IMAGE);
         }
     });
