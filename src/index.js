@@ -4,12 +4,15 @@ const { version, author, homepage } = require('../package.json');
 const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
+const semver = require('semver');
 
-const { DEFAULT_IMAGE } = require('./common');
+const { DEFAULT_IMAGE, UPDATE_CHECK, UPDATE_CHECK_URL } = require('./common');
 const RoonSettings = require('./settings');
 const Discord = require('./discord');
 const Discogs = require('./discogs');
 const Imgur = require('./imgur');
+
+const { Info, Debug, Warn, Error } = require('./console');
 
 var roon = new RoonApi({
     extension_id: 'com.jtpox.discord-roon',
@@ -32,6 +35,7 @@ let Settings;
  */
 function Initiate() {
 
+    CheckVersion();
     RoonSettings.Initiate(roon);
     InitiateIntegrations();
 
@@ -40,6 +44,8 @@ function Initiate() {
         provided_services: [RoonSettings.Service(InitiateIntegrations)],
     });
     roon.start_discovery();
+
+    setInterval(CheckVersion, UPDATE_CHECK);
 }
 
 /**
@@ -47,12 +53,24 @@ function Initiate() {
  * @function InitiateIntegrations
  */
 function InitiateIntegrations() {
-    console.log('Extension: Reloading settings');
+    Info('Extension: Reloading settings');
     Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
 
     Discord.Initiate(Settings);
     Discogs.Initiate(roon, Settings);
     Imgur.Initiate(roon, Settings);
+}
+
+/**
+ * Check for latest version
+ * @function CheckVersion
+ */
+async function CheckVersion() {
+    const latest_package_json = await fetch(UPDATE_CHECK_URL);
+    if(!latest_package_json.ok) return;
+
+    const package = await latest_package_json.json();
+    if(semver.gt(package.version, version)) Warn(`New discord-presence-roon update available! | Running version: ${version} | Latest version: ${package.version}`);
 }
 
 /**
@@ -62,7 +80,7 @@ function InitiateIntegrations() {
  */
 function Paired(core) {
     let transport = core.services.RoonApiTransport;
-    console.log('Roon Paired');
+    Info('Roon Paired');
 
     let zone_info = {
         zone_id: null,

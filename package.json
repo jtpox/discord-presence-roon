@@ -20,6 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "@roonlabs/node-roon-api": "^1.2.3",
+    "colors": "^1.4.0",
     "disconnect": "^1.2.2",
     "discord-rpc": "^4.0.1",
     "dotenv": "^16.3.1",
@@ -27,6 +28,7 @@
     "node-roon-api-image": "github:roonlabs/node-roon-api-image",
     "node-roon-api-settings": "github:roonlabs/node-roon-api-settings",
     "node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
+    "semver": "^7.5.4",
     "tslib": "^2.6.2"
   },
   "devDependencies": {
