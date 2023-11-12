@@ -6,7 +6,7 @@ const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
 const semver = require('semver');
 
-const { DEFAULT_IMAGE, UPDATE_CHECK } = require('./common');
+const { DEFAULT_IMAGE, UPDATE_CHECK, UPDATE_CHECK_URL } = require('./common');
 const RoonSettings = require('./settings');
 const Discord = require('./discord');
 const Discogs = require('./discogs');
@@ -66,7 +66,7 @@ function InitiateIntegrations() {
  * @function CheckVersion
  */
 async function CheckVersion() {
-    const latest_package_json = await fetch('https://raw.githubusercontent.com/jtpox/discord-presence-roon/main/package.json');
+    const latest_package_json = await fetch(UPDATE_CHECK_URL);
     if(!latest_package_json.ok) return;
 
     const package = await latest_package_json.json();
