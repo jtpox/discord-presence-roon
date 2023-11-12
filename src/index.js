@@ -158,63 +158,66 @@ let PreviousAlbumArt = {
  * @param {object} data The data provided by Roon zones.
  */
 async function SongChanged(core, data) {
-    if(data.state === 'paused') Discord.Self().clearActivity();
+    if(data.state === 'paused') {
+        Discord.Self().clearActivity();
+        return;
+    }
 
-    if(data.state === 'playing') {
-        const {
-            image_key,
-            length,
-            seek_position,
-            one_line,
-            three_line,
-        } = data.now_playing;
+    if(data.state !== 'playing') return;
 
-        const endTimestamp = Math.round((new Date().getTime() / 1000) + length - seek_position);
-        const state = (three_line.line3.substring(0, 128)
-            + (three_line.line3.length === 1 ? ' ' : '')) || undefined;
+    const {
+        image_key,
+        length,
+        seek_position,
+        one_line,
+        three_line,
+    } = data.now_playing;
 
-        const activity = {
-            // type: 2, // Doesn't work. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
-            details: one_line.line1.substring(0, 128),
-            state,
-            endTimestamp,
-            instance: false,
-            largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : DEFAULT_IMAGE,
-            largeImageText: `Listening at: ${data.display_name}`,
-        };
-        Discord.Self().setActivity(activity);
+    const startTimestamp = new Date().getTime();
+    const endTimestamp = Math.round((startTimestamp / 1000) + length - seek_position);
+    const state = (three_line.line3.substring(0, 128)
+        + (three_line.line3.length === 1 ? ' ' : '')) || undefined;
+
+    const activity = {
+        // type: 2, // Unsupported now. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
+        details: one_line.line1.substring(0, 128),
+        state,
+        startTimestamp,
+        endTimestamp,
+        instance: false,
+        largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : DEFAULT_IMAGE,
+        largeImageText: `Listening at: ${data.display_name}`,
+    };
+    Discord.Self().setActivity(activity);
+
+    if(
+        image_key
+        && image_key !== PreviousAlbumArt.imageKey
+        && !PreviousAlbumArt.uploading
+    ) {
+        if(
+            Settings.imgurEnable
+        ) {
+            PreviousAlbumArt.uploading = true;
+            Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
+                PreviousAlbumArt.imageKey = image_key;
+                PreviousAlbumArt.imageUrl = art;
+                PreviousAlbumArt.uploading = false;
+                Discord.Self().setActivity({ largeImageKey: art });
+            }).catch(() => {});
+        }
 
         if(
-            image_key
-            && image_key !== PreviousAlbumArt.imageKey
-            && !PreviousAlbumArt.uploading
+            Settings.discogsEnable
+            && !Settings.imgurEnable
         ) {
-            if(
-                Settings.imgurEnable
-            ) {
-                PreviousAlbumArt.uploading = true;
-                Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
+            Discogs.Search(data.now_playing.three_line.line2, data.now_playing.three_line.line1).then((result) => {
+                if(result.cover_image) {
                     PreviousAlbumArt.imageKey = image_key;
-                    PreviousAlbumArt.imageUrl = art;
-                    PreviousAlbumArt.uploading = false;
-                    activity.largeImageKey = art;
-                    Discord.Self().setActivity(activity);
-                }).catch(() => {});
-            }
-
-            if(
-                Settings.discogsEnable
-                && !Settings.imgurEnable
-            ) {
-                Discogs.Search(data.now_playing.three_line.line2, data.now_playing.three_line.line1).then((result) => {
-                    if(result.cover_image) {
-                        PreviousAlbumArt.imageKey = image_key;
-                        PreviousAlbumArt.imageUrl = result.cover_image;
-                        activity.largeImageKey = result.cover_image;
-                        Discord.Self().setActivity(activity);
-                    }
-                }).catch(() => {});
-            }
+                    PreviousAlbumArt.imageUrl = result.cover_image;
+                    Discord.Self().setActivity({ largeImageKey: result.cover_image });
+                }
+            }).catch(() => {});
         }
     }
 }
