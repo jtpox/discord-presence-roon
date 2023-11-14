@@ -24,7 +24,7 @@ function Debug(msg) {
  * @param {string} msg Message you want to log.
  */
 function Warn(msg) {
-    console.warn(` WARN: ${msg} `.bgYellow.white);
+    console.warn(` WARN: ${msg} `.bgYellow.black);
 }
 
 /**
