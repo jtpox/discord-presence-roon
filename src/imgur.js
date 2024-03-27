@@ -1,6 +1,7 @@
 const { writeFileSync, readFileSync } = require('fs');
 const { join } = require('path');
 const { Readable } = require('stream');
+const { Blob } = require('buffer');
 const { ImgurClient } = require('imgur');
 
 const { Info, Error } = require('./console');
@@ -14,6 +15,8 @@ let Album = {
     id: null,
     deletehash: null,
 };
+
+const API_URL = 'https://api.imgur.com/3/image';
 
 /**
  * Constructor for Imgur integration.
@@ -43,19 +46,43 @@ function Initiate(roon, settings) {
  * @returns {string} URL of the image.
  */
 async function UploadToAlbum(buffer, image_key) {
-    const response = await Client.upload({
-        image: Readable.from(buffer),
-        title: image_key,
-        description: image_key,
-        album: Album.deletehash,
-        type: 'stream',
-    });
+    const data = new FormData();
+    data.append('image', new Blob([buffer]), image_key);
+    data.append('type', 'image');
+    data.append('title', image_key);
+    data.append('description', image_key);
 
-    if(response.status !== 200) {
-        Error(`Imgur API Error: ${response.data}`);
-        return DEFAULT_IMAGE; 
+    try {
+        const upload = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Client-ID ${ImgurClientId}`,
+            },
+            body: data,
+        });
+
+        if(upload.status !== 200) {
+            Error(`Error uploading cover to Imgur with status: ${upload}`);
+            return DEFAULT_IMAGE; 
+        }
+
+        const uploadResponse = await upload.json();
+        const { deletehash: coverDeleteHash, link } = uploadResponse.data;
+
+        const albumForm = new FormData();
+        albumForm.append('deletehashes[]', coverDeleteHash);
+
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Client-ID ${ImgurClientId}`,
+            },
+        });
+
+        return link;
+    } catch (err) {
+        Error(`Error uploading cover to Imgur: ${err}`);
     }
-    return response.data.link;
 }
 
 /**
@@ -111,7 +138,7 @@ async function GetAlbumArt(image_key, GetImageFn) {
 async function CreateAlbum() {
     const formData = new FormData();
     formData.append('title', 'Album Covers for Roon Discord Integration');
-    const albumFetch = await fetch('https://api.imgur.com/3/album', {
+    const albumFetch = await fetch(API_URL, {
         method: 'POST',
         headers: {
             Authorization: `Client-ID ${ImgurClientId}`,
