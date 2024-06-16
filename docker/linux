@@ -1,0 +1,20 @@
+# For Linux containers.
+# Currently not working as named pipes don't work and websocket RPC is locked by Discord.
+# docker build -t discord-presence -f docker/linux .
+# docker run -it -v //./pipe/discord-ipc-0:/tmp/discord-ipc-0 discord-presence
+FROM ubuntu:latest
+RUN apt-get update
+RUN apt-get -y install curl git
+
+ENV NVM_DIR /root/.nvm
+ENV NODE_VERSION 18.5.0
+# Install NVM and Node
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
+ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+
+WORKDIR /app
+COPY . .
+RUN npm install

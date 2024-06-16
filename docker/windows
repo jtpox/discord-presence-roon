@@ -1,0 +1,21 @@
+# For Windows containers.
+# Currently not working as named pipes don't work and websocket RPC is locked by Discord.
+# docker build -t discord-presence -f docker/windows .
+# docker run -it -v \\.\pipe\discord-ipc-0:\\.\pipe\discord-ipc-0:rw discord-presence powershell.exe
+FROM mcr.microsoft.com/windows/servercore:1803 as installer
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';$ProgressPreference='silentlyContinue';"]
+
+ENV NODE_VERSION 18.5.0
+# Install NodeJS
+RUN Invoke-WebRequest -OutFile nodejs.zip -UseBasicParsing "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-win-x64.zip"; Expand-Archive nodejs.zip -DestinationPath C:\; Rename-Item "C:\\node-v${NODE_VERSION}-win-x64" c:\nodejs
+RUN SETX PATH \"$Env:PATH;C:\nodejs\"
+RUN npm config set registry https://registry.npmjs.org/
+
+# Install Git
+RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest "https://github.com/git-for-windows/git/releases/download/v2.45.2.windows.1/MinGit-2.45.2-busybox-64-bit.zip" -Out MinGit.zip
+RUN Expand-Archive c:\\MinGit.zip -DestinationPath C:\\git;
+RUN SETX PATH \"$Env:PATH;C:\git\"
+
+WORKDIR /app
+COPY . .
+RUN npm install
