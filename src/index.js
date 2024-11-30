@@ -178,15 +178,15 @@ async function SongChanged(core, data) {
 
     const activity = {
         type: ActivityType.Listening,
-        details: three_line.line1.substring(0, 128), // Track title
-        state: three_line.line2.substring(0, 128), // Track artist
+        details: (three_line.line1.length > 0) ? three_line.line1.substring(0, 128) : "Unknown", // Track title
+        state: (three_line.line2.length > 0) ? three_line.line2.substring(0, 128) : "Unknown", // Track artist
         startTimestamp,
         endTimestamp,
         instance: false,
         smallImageKey: DEFAULT_IMAGE,
         smallImageText: `Listening at: ${data.display_name}`,
         largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : DEFAULT_IMAGE,
-        largeImageText: three_line.line3.substring(0, 128), // Album title
+        largeImageText: (three_line.line3.length > 0) ? three_line.line3.substring(0, 128) : "Unknown", // Album title
     };
     Discord.Self().user?.setActivity(activity);
 
