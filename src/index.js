@@ -151,6 +151,21 @@ let PreviousAlbumArt = {
     imageUrl: DEFAULT_IMAGE,
     uploading: false,
 };
+
+/**
+ * Formats a string for embedding in an activity.
+ * @param {string} line The line to format.
+ * @returns {string | undefined} The formatted line, or `undefined` if {@link line} is empty.
+ */
+function formatSongLine(line) {
+    switch (line.length) {
+        case 0: return undefined;
+        case 1: line += " "; break;
+    }
+
+    return line.substring(0, 128);
+}
+
 /**
  * Song changed event which will update the Discord user activity.
  * @function SongChanged
@@ -178,15 +193,15 @@ async function SongChanged(core, data) {
 
     const activity = {
         type: ActivityType.Listening,
-        details: (three_line.line1.length > 0) ? three_line.line1.substring(0, 128) : "Unknown", // Track title
-        state: (three_line.line2.length > 0) ? three_line.line2.substring(0, 128) : "Unknown", // Track artist
+        details: formatSongLine(three_line.line1), // Track title
+        state: formatSongLine(three_line.line2), // Track artist
         startTimestamp,
         endTimestamp,
         instance: false,
         smallImageKey: DEFAULT_IMAGE,
         smallImageText: `Listening at: ${data.display_name}`,
         largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : DEFAULT_IMAGE,
-        largeImageText: (three_line.line3.length > 0) ? three_line.line3.substring(0, 128) : "Unknown", // Album title
+        largeImageText: formatSongLine(three_line.line3), // Album title
     };
     Discord.Self().user?.setActivity(activity);
 
