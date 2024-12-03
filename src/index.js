@@ -118,7 +118,7 @@ function Paired(core) {
                 zone_info = { ...zone_info, ...priority_zone[0] };
 
                 const { image_key, three_line } = zone_info.now_playing;
-                SetAlbumArt(core, image_key, three_line.line1, three_line.line2);
+                SetAlbumArt(core, image_key, three_line.line2, three_line.line3, three_line.line1);
                 break;
             case 'zones_seek_changed':
                 const correct_zone = data.zones_seek_changed.find(el => el.zone_id === zone_info.zone_id);
@@ -152,10 +152,11 @@ let PreviousAlbumArt = {
  * Populate {@link PreviousAlbumArt} with the album art for a given Roon {@link image_key}, and update the current activity.
  * @param {object} core The Roon core.
  * @param {string} image_key The Roon image key tied to the given album.
- * @param {string} track The track title.
  * @param {string} artist The artist.
+ * @param {string} album The album title.
+ * @param {string} track The track title.
  */
-async function SetAlbumArt(core, image_key, track, artist) {
+async function SetAlbumArt(core, image_key, artist, album, track) {
     if(!image_key || image_key === PreviousAlbumArt.imageKey || PreviousAlbumArt.uploading) return;
     PreviousAlbumArt.imageKey = image_key;
     PreviousAlbumArt.imageUrl = DEFAULT_IMAGE;
@@ -166,13 +167,16 @@ async function SetAlbumArt(core, image_key, track, artist) {
             PreviousAlbumArt.imageUrl = art;
             PreviousAlbumArt.uploading = false;
             Discord.Self()?.setActivity({ largeImageKey: art });
-        }).catch(() => {});
+        }).catch((err) => Warn(`Imgur fetch failed: ${err}`));
     } else if(Settings.discogsEnable) {
-        Discogs.Search(artist, track).then((result) => {
-            if(!result.cover_image) Info(`No album art found for '${track} - ${artist}' in Discogs`);
-            PreviousAlbumArt.imageUrl = result.cover_image || DEFAULT_IMAGE;
-            Discord.Self()?.setActivity({ largeImageKey: result.cover_image });
-        }).catch(() => {});
+        Discogs.Search(artist, album, track).then((result) => {
+            if(result.cover_image) {
+                PreviousAlbumArt.imageUrl = result.cover_image;
+                Discord.Self()?.setActivity({ largeImageKey: result.cover_image});
+            } else {
+                Info(`No album art found for '${track} - ${artist}' in Discogs`);
+            }
+        }).catch((err) => Warn(`Discogs search failed: ${err}`));
     }
 }
 

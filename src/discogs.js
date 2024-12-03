@@ -20,20 +20,23 @@ function Initiate(roon, settings) {
 }
 
 /**
- * Search through Discogs database using artist name and track name.
+ * Search through Discogs' database for an {@link album}, by an {@link artist}, containing a {@link track}.
  * @async
  * @function Search
- * @param {string} artist Name of artist.
+ * @param {string} artist Name of artist. Must not be empty.
+ * @param {string} album Name of album.
  * @param {string} track Name of track.
- * @returns {Promise<object>} Data retrieved from Discogs. It may return an empty object.
+ * @returns {Promise<object>} Data retrieved from Discogs. Returns an empty object if no results are found.
  */
-async function Search(artist, track) {
+async function Search(artist, album, track) {
     return new Promise(async (resolve, reject) => {
         if(!Settings.discogsEnable) reject({});
+        if (!artist) reject(`Missing artist for '${track} - ${album}'`); // Likely to hit a false positive
     
         let results = await Client.search({
-            artist,
-            track,
+            title: album,
+            artist: artist.split(' / ')[0], // Avoid missing due to Roon providing extraneous artists
+            track: track.substring(0, track.indexOf(' (feat.')), // Strip extraneous `feat.` substring
         });
 
         // Retrieve the first result.
