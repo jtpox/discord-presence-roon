@@ -167,7 +167,8 @@ async function SetAlbumArt(core, image_key, artist, album, track) {
             PreviousAlbumArt.imageUrl = art;
             PreviousAlbumArt.uploading = false;
             Discord.Self()?.setActivity({ largeImageKey: art });
-        }).catch((err) => Warn(`Imgur fetch failed: ${err}`));
+        }).catch((err) => Warn(`Imgur fetch failed: ${err}`))
+          .finally(() => PreviousAlbumArt.uploading = false);
     } else if(Settings.discogsEnable) {
         Discogs.Search(artist, album, track).then((result) => {
             if(result.cover_image) {
