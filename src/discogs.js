@@ -33,10 +33,15 @@ async function Search(artist, album, track) {
         if(!Settings.discogsEnable) reject({});
         if (!artist) reject(`Missing artist for '${track} - ${album}'`); // Likely to hit a false positive
     
+        /** @param {string} str */
+        const stripFeat = (str) => str.substring(0, str.indexOf(' (feat.')) || str; // Strip extraneous `feat.` substring
+    
+        const artists = artist.split(' / ');
         let results = await Client.search({
-            title: album,
-            artist: artist.split(' / ')[0], // Avoid missing due to Roon providing extraneous artists
-            track: track.substring(0, track.indexOf(' (feat.')), // Strip extraneous `feat.` substring
+            title: stripFeat(album), 
+            artist: artists[0], // Avoid missing due to Roon providing extraneous artists
+            credit: artists[1], // Handles remixes/etc. better, but can miss when Discogs credits are wrong
+            track: stripFeat(track),
         });
 
         // Retrieve the first result.
