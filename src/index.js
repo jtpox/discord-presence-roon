@@ -169,14 +169,14 @@ async function SetAlbumArt(core, image_key, artist, album, track) {
         Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
             PreviousAlbumArt.imageUrl = art;
             PreviousAlbumArt.uploading = false;
-            Discord.Self()?.setActivity({ largeImageKey: art });
+            Discord.Self().user?.setActivity({ largeImageKey: art });
         }).catch((err) => Warn(`Imgur fetch failed: ${err}`))
           .finally(() => PreviousAlbumArt.uploading = false);
     } else if(Settings.discogsEnable) {
         Discogs.Search(artist, album, track).then((result) => {
             if(result.cover_image) {
                 PreviousAlbumArt.imageUrl = result.cover_image;
-                Discord.Self()?.setActivity({ largeImageKey: result.cover_image});
+                Discord.Self().user?.setActivity({ largeImageKey: result.cover_image});
             } else {
                 Info(`No album art found for '${track} - ${artist}' in Discogs`);
             }
