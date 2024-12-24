@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** @module main */
 const { version, author, homepage } = require('../package.json');
+const { ActivityType } = require('discord-api-types/v10');
 const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
@@ -103,7 +104,7 @@ function Paired(core) {
         if(!['Changed', 'Subscribed'].includes(cmd)) return;
 
         if(data.hasOwnProperty('zones_removed')) {
-            Discord.Self().clearActivity();
+            Discord.Self().user?.clearActivity();
             return;
         }
 
@@ -142,7 +143,7 @@ function Paired(core) {
  */
 function Unpaired(core) {
     if(Discord.Self() === undefined) return;
-    Discord.Self().clearActivity();
+    Discord.Self().user?.clearActivity();
 }
 
 let PreviousAlbumArt = {
@@ -150,6 +151,21 @@ let PreviousAlbumArt = {
     imageUrl: DEFAULT_IMAGE,
     uploading: false,
 };
+
+/**
+ * Formats a string for embedding in an activity.
+ * @param {string} line The line to format.
+ * @returns {string | undefined} The formatted line, or `undefined` if {@link line} is empty.
+ */
+function formatSongLine(line) {
+    switch (line.length) {
+        case 0: return undefined;
+        case 1: line += " "; break;
+    }
+
+    return line.substring(0, 128);
+}
+
 /**
  * Song changed event which will update the Discord user activity.
  * @function SongChanged
@@ -159,7 +175,7 @@ let PreviousAlbumArt = {
  */
 async function SongChanged(core, data) {
     if(data.state === 'paused') {
-        Discord.Self().clearActivity();
+        Discord.Self().user?.clearActivity();
         return;
     }
 
@@ -169,26 +185,25 @@ async function SongChanged(core, data) {
         image_key,
         length,
         seek_position,
-        one_line,
         three_line,
     } = data.now_playing;
 
-    const startTimestamp = new Date().getTime();
-    const endTimestamp = Math.round((startTimestamp / 1000) + length - seek_position);
-    const state = (three_line.line3.substring(0, 128)
-        + (three_line.line3.length === 1 ? ' ' : '')) || undefined;
+    const startTimestamp = Date.now() - (seek_position ?? 0) * 1000;
+    const endTimestamp = startTimestamp + length * 1000;
 
     const activity = {
-        // type: 2, // Unsupported now. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
-        details: one_line.line1.substring(0, 128),
-        state,
+        type: ActivityType.Listening,
+        details: formatSongLine(three_line.line1), // Track title
+        state: formatSongLine(three_line.line2), // Track artist
         startTimestamp,
         endTimestamp,
         instance: false,
+        smallImageKey: DEFAULT_IMAGE,
+        smallImageText: `Listening at: ${data.display_name}`,
         largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : DEFAULT_IMAGE,
-        largeImageText: `Listening at: ${data.display_name}`,
+        largeImageText: formatSongLine(three_line.line3), // Album title
     };
-    Discord.Self().setActivity(activity);
+    Discord.Self().user?.setActivity(activity);
 
     if(
         image_key
@@ -203,7 +218,7 @@ async function SongChanged(core, data) {
                 PreviousAlbumArt.imageKey = image_key;
                 PreviousAlbumArt.imageUrl = art;
                 PreviousAlbumArt.uploading = false;
-                Discord.Self().setActivity({ largeImageKey: art });
+                Discord.Self().user?.setActivity({ largeImageKey: art });
             }).catch(() => {});
         }
 
@@ -215,7 +230,7 @@ async function SongChanged(core, data) {
                 if(result.cover_image) {
                     PreviousAlbumArt.imageKey = image_key;
                     PreviousAlbumArt.imageUrl = result.cover_image;
-                    Discord.Self().setActivity({ largeImageKey: result.cover_image });
+                    Discord.Self().user?.setActivity({ largeImageKey: result.cover_image });
                 }
             }).catch(() => {});
         }
