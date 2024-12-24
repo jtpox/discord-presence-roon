@@ -102,33 +102,32 @@ function Paired(core) {
 
     transport.subscribe_zones((cmd, data) => {
         if(!['Changed', 'Subscribed'].includes(cmd)) return;
+        switch(Object.keys(data)[0]) {
+            case 'zones_removed':
+                Discord.Self().user?.clearActivity();
+                return;
+            
+            case 'zones':
+            case 'zones_changed':
+            case 'zones_added':
+                const zones_to_check = Settings.roonZones.split(',');
+                const available_zones = data.zones || data.zones_changed || data.zones_added;;
+                const zones = available_zones.filter((zone_data) => zones_to_check.includes(zone_data.display_name));
+                const priority_zone = zones.sort((a, b) => zones_to_check.indexOf(a.display_name) - zones_to_check.indexOf(b.display_name));
 
-        if(data.hasOwnProperty('zones_removed')) {
-            Discord.Self().user?.clearActivity();
-            return;
-        }
+                if(priority_zone.length < 1) return;
+                zone_info = { ...zone_info, ...priority_zone[0] };
 
-        if(
-            data.hasOwnProperty('zones')
-            || data.hasOwnProperty('zones_changed') 
-            || data.hasOwnProperty('zones_added')
-        ) {
-            const zones_to_check = Settings.roonZones.split(',');
-            const available_zones = data.zones || data.zones_changed || data.zones_added;
-            const zones = available_zones.filter((zone_data) => zones_to_check.includes(zone_data.display_name));
-            const priority_zone = zones.sort((a, b) => zones_to_check.indexOf(a.display_name) - zones_to_check.indexOf(b.display_name));
+                const { image_key, three_line } = zone_info.now_playing;
+                SetAlbumArt(core, image_key, three_line.line2, three_line.line3, three_line.line1);
+                break;
+            case 'zones_seek_changed':
+                const correct_zone = data.zones_seek_changed.find(el => el.zone_id === zone_info.zone_id);
+                if(!correct_zone) return;
 
-            if(priority_zone.length < 1) return;
-
-            zone_info = { ...zone_info, ...priority_zone[0] };
-        }
-
-        if(data.hasOwnProperty('zones_seek_changed')) {
-            const correct_zone = data.zones_seek_changed.find(el => el.zone_id === zone_info.zone_id);
-            if(!correct_zone) return;
-
-            zone_info.now_playing.seek_position = correct_zone.seek_position;
-            zone_info = { ...zone_info, ...correct_zone };
+                zone_info.now_playing.seek_position = correct_zone.seek_position;
+                zone_info = { ...zone_info, ...correct_zone };
+                break;
         }
 
         if(Discord.Self() === undefined) return;
@@ -153,6 +152,39 @@ let PreviousAlbumArt = {
 };
 
 /**
+ * Populate {@link PreviousAlbumArt} with the album art for a given Roon {@link image_key}, and update the current activity.
+ * @param {object} core The Roon core.
+ * @param {string} image_key The Roon image key tied to the given album.
+ * @param {string} artist The artist.
+ * @param {string} album The album title.
+ * @param {string} track The track title.
+ */
+async function SetAlbumArt(core, image_key, artist, album, track) {
+    if(!image_key || image_key === PreviousAlbumArt.imageKey || PreviousAlbumArt.uploading) return;
+    PreviousAlbumArt.imageKey = image_key;
+    PreviousAlbumArt.imageUrl = DEFAULT_IMAGE;
+
+    if(Settings.imgurEnable) {
+        PreviousAlbumArt.uploading = true;
+        Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
+            PreviousAlbumArt.imageUrl = art;
+            PreviousAlbumArt.uploading = false;
+            Discord.Self()?.setActivity({ largeImageKey: art });
+        }).catch((err) => Warn(`Imgur fetch failed: ${err}`))
+          .finally(() => PreviousAlbumArt.uploading = false);
+    } else if(Settings.discogsEnable) {
+        Discogs.Search(artist, album, track).then((result) => {
+            if(result.cover_image) {
+                PreviousAlbumArt.imageUrl = result.cover_image;
+                Discord.Self()?.setActivity({ largeImageKey: result.cover_image});
+            } else {
+                Info(`No album art found for '${track} - ${artist}' in Discogs`);
+            }
+        }).catch((err) => Warn(`Discogs search failed: ${err}`));
+    }
+}
+
+/**
  * Formats a string for embedding in an activity.
  * @param {string} line The line to format.
  * @returns {string | undefined} The formatted line, or `undefined` if {@link line} is empty.
@@ -174,12 +206,11 @@ function formatSongLine(line) {
  * @param {object} data The data provided by Roon zones.
  */
 async function SongChanged(core, data) {
-    if(data.state === 'paused') {
-        Discord.Self().user?.clearActivity();
-        return;
+    switch(data.state) {
+        case 'playing': break;
+        case 'paused': Discord.Self().user?.clearActivity();
+        default: return;
     }
-
-    if(data.state !== 'playing') return;
 
     const {
         image_key,
@@ -200,8 +231,8 @@ async function SongChanged(core, data) {
         instance: false,
         smallImageKey: DEFAULT_IMAGE,
         smallImageText: `Listening at: ${data.display_name}`,
-        largeImageKey: (image_key === PreviousAlbumArt.imageKey)? PreviousAlbumArt.imageUrl : DEFAULT_IMAGE,
-        largeImageText: formatSongLine(three_line.line3), // Album title
+        largeImageKey: PreviousAlbumArt.imageUrl,
+        largeImageText: `Listening at: ${data.display_name}`,
     };
     Discord.Self().user?.setActivity(activity);
 

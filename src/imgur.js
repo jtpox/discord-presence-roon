@@ -3,7 +3,7 @@ const { join } = require('path');
 const { Readable } = require('stream');
 const { Blob } = require('buffer');
 
-const { Info, Error } = require('./console');
+const { Info, Warn, Error } = require('./console');
 const { DEFAULT_IMAGE } = require('./common');
 
 let Roon;
@@ -118,8 +118,7 @@ async function GetAlbumArt(image_key, GetImageFn) {
             };
             resolve(link);
         } catch (err) {
-            Error(err);
-            reject(DEFAULT_IMAGE);
+            reject(err);
         }
     });
 }
@@ -139,6 +138,13 @@ async function CreateAlbum() {
     });
 
     const { data } = await albumFetch.json();
+    if(!albumFetch.ok) {
+        Warn(`Failed to create Imgur album: [${albumFetch.status} ${albumFetch.statusText}] ${data?.error ?? "No error received from Imgur"}`);
+        return {
+            id: null,
+            deletehash: null,
+        }
+    }
 
     const settings = Roon.load_config('settings') || Settings.DefaultSettings;
     settings.imgurAlbumId = data.id;
@@ -169,7 +175,9 @@ async function GetAlbum() {
     });
     if(!albumFetch.ok) {
         Album = await CreateAlbum();
-        return GetAlbum();
+        return Album.id !== null
+            ? GetAlbum()
+            : output;
     }
 
     const albumImages = await albumFetch.json();
