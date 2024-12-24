@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** @module main */
 const { version, author, homepage } = require('../package.json');
+const { ActivityType } = require('discord-api-types/v10');
 const RoonApi = require('@roonlabs/node-roon-api');
 const RoonApiTransport = require('node-roon-api-transport');
 const RoonApiImage = require('node-roon-api-image');
@@ -101,11 +102,11 @@ function Paired(core) {
 
     transport.subscribe_zones((cmd, data) => {
         if(!['Changed', 'Subscribed'].includes(cmd)) return;
-
         switch(Object.keys(data)[0]) {
             case 'zones_removed':
-                Discord.Self()?.clearActivity();
+                Discord.Self().user?.clearActivity();
                 return;
+            
             case 'zones':
             case 'zones_changed':
             case 'zones_added':
@@ -129,7 +130,9 @@ function Paired(core) {
                 break;
         }
 
-        if(Discord.Self() !== undefined) SongChanged(core, zone_info);
+        if(Discord.Self() === undefined) return;
+
+        SongChanged(core, zone_info);
     });
 }
 
@@ -139,7 +142,7 @@ function Paired(core) {
  */
 function Unpaired(core) {
     if(Discord.Self() === undefined) return;
-    Discord.Self()?.clearActivity();
+    Discord.Self().user?.clearActivity();
 }
 
 let PreviousAlbumArt = {
@@ -182,7 +185,21 @@ async function SetAlbumArt(core, image_key, artist, album, track) {
 }
 
 /**
- * Update the activity with information from {@link data}.
+ * Formats a string for embedding in an activity.
+ * @param {string} line The line to format.
+ * @returns {string | undefined} The formatted line, or `undefined` if {@link line} is empty.
+ */
+function formatSongLine(line) {
+    switch (line.length) {
+        case 0: return undefined;
+        case 1: line += " "; break;
+    }
+
+    return line.substring(0, 128);
+}
+
+/**
+ * Song changed event which will update the Discord user activity.
  * @function SongChanged
  * @async
  * @param {object} core The Roon core.
@@ -191,33 +208,64 @@ async function SetAlbumArt(core, image_key, artist, album, track) {
 async function SongChanged(core, data) {
     switch(data.state) {
         case 'playing': break;
-        case 'paused': Discord.Self()?.clearActivity();
+        case 'paused': Discord.Self().user?.clearActivity();
         default: return;
     }
 
     const {
+        image_key,
         length,
         seek_position,
-        one_line,
         three_line,
     } = data.now_playing;
 
-    const startTimestamp = new Date().getTime();
-    const endTimestamp = Math.round((startTimestamp / 1000) + length - seek_position);
-    const state = (three_line.line3.substring(0, 128)
-        + (three_line.line3.length === 1 ? ' ' : '')) || undefined;
+    const startTimestamp = Date.now() - (seek_position ?? 0) * 1000;
+    const endTimestamp = startTimestamp + length * 1000;
 
     const activity = {
-        // type: 2, // Unsupported now. (https://discord-api-types.dev/api/discord-api-types-v10/enum/ActivityType)
-        details: one_line.line1.substring(0, 128),
-        state,
+        type: ActivityType.Listening,
+        details: formatSongLine(three_line.line1), // Track title
+        state: formatSongLine(three_line.line2), // Track artist
         startTimestamp,
         endTimestamp,
         instance: false,
+        smallImageKey: DEFAULT_IMAGE,
+        smallImageText: `Listening at: ${data.display_name}`,
         largeImageKey: PreviousAlbumArt.imageUrl,
         largeImageText: `Listening at: ${data.display_name}`,
     };
-    Discord.Self()?.setActivity(activity);
+    Discord.Self().user?.setActivity(activity);
+
+    if(
+        image_key
+        && image_key !== PreviousAlbumArt.imageKey
+        && !PreviousAlbumArt.uploading
+    ) {
+        if(
+            Settings.imgurEnable
+        ) {
+            PreviousAlbumArt.uploading = true;
+            Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
+                PreviousAlbumArt.imageKey = image_key;
+                PreviousAlbumArt.imageUrl = art;
+                PreviousAlbumArt.uploading = false;
+                Discord.Self().user?.setActivity({ largeImageKey: art });
+            }).catch(() => {});
+        }
+
+        if(
+            Settings.discogsEnable
+            && !Settings.imgurEnable
+        ) {
+            Discogs.Search(data.now_playing.three_line.line2, data.now_playing.three_line.line1).then((result) => {
+                if(result.cover_image) {
+                    PreviousAlbumArt.imageKey = image_key;
+                    PreviousAlbumArt.imageUrl = result.cover_image;
+                    Discord.Self().user?.setActivity({ largeImageKey: result.cover_image });
+                }
+            }).catch(() => {});
+        }
+    }
 }
 
 /**

@@ -1,5 +1,5 @@
 /** @module discord */
-const { register, Client } = require('discord-rpc');
+const { register, Client } = require('@xhayper/discord-rpc');
 const { Info, Error } = require('./console');
 
 let Discord = undefined;
@@ -31,9 +31,9 @@ function Initiate(settings) {
  * @param {string} clientId The Client ID to access Discord RPC.
  */
 async function Connect(client, clientId) {
+    client.clientId = clientId;
     try {
         client.login({
-            clientId,
             // scopes,
         }).catch(console.error);
     } catch {
