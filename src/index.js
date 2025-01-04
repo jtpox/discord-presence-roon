@@ -240,34 +240,33 @@ async function SongChanged(core, data) {
     Discord.Self().user?.setActivity(activity);
 
     if(
-        image_key
-        && image_key !== PreviousAlbumArt.imageKey
-        && !PreviousAlbumArt.uploading
-    ) {
-        if(
-            Settings.imgurEnable
-        ) {
-            PreviousAlbumArt.uploading = true;
-            Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
-                PreviousAlbumArt.imageKey = image_key;
-                PreviousAlbumArt.imageUrl = art;
-                PreviousAlbumArt.uploading = false;
-                Discord.Self().user?.setActivity({ largeImageKey: art });
-            }).catch(() => {});
-        }
+        !image_key
+        || image_key === PreviousAlbumArt.imageKey
+        || PreviousAlbumArt.uploading
+    ) return;
 
-        if(
-            Settings.discogsEnable
-            && !Settings.imgurEnable
-        ) {
-            Discogs.Search(artist, album, track).then((result) => {
-                if(result.cover_image) {
-                    PreviousAlbumArt.imageKey = image_key;
-                    PreviousAlbumArt.imageUrl = result.cover_image;
-                    Discord.Self().user?.setActivity({ largeImageKey: result.cover_image });
-                }
-            }).catch(() => {});
-        }
+    if(Settings.imgurEnable) {
+        PreviousAlbumArt.uploading = true;
+        Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
+            PreviousAlbumArt.imageKey = image_key;
+            PreviousAlbumArt.imageUrl = art;
+            PreviousAlbumArt.uploading = false;
+            Discord.Self().user?.setActivity({ largeImageKey: art });
+        }).catch(() => {});
+    }
+
+    if(Settings.discogsEnable && !Settings.imgurEnable) {
+        Discogs.Search(artist, album, track).then((result) => {
+            if(result.cover_image) {
+                PreviousAlbumArt.imageKey = image_key;
+                PreviousAlbumArt.imageUrl = result.cover_image;
+                Discord.Self().user?.setActivity({ largeImageKey: result.cover_image });
+            } else {
+                PreviousAlbumArt.imageKey = image_key;
+                PreviousAlbumArt.imageUrl = DEFAULT_IMAGE;
+                Discord.Self().user?.setActivity({ largeImageKey: DEFAULT_IMAGE });
+            }
+        }).catch(() => {});
     }
 }
 
