@@ -117,9 +117,6 @@ function Paired(core) {
 
                 if(priority_zone.length < 1) return;
                 zone_info = { ...zone_info, ...priority_zone[0] };
-
-                const { image_key, three_line } = zone_info.now_playing;
-                SetAlbumArt(core, image_key, three_line.line2, three_line.line3, three_line.line1);
                 break;
             case 'zones_seek_changed':
                 const correct_zone = data.zones_seek_changed.find(el => el.zone_id === zone_info.zone_id);
@@ -219,13 +216,19 @@ async function SongChanged(core, data) {
         three_line,
     } = data.now_playing;
 
+    const {
+        line1: track,
+        line2: artist,
+        line3: album,
+    } = three_line;
+
     const startTimestamp = Date.now() - (seek_position ?? 0) * 1000;
     const endTimestamp = startTimestamp + length * 1000;
 
     const activity = {
         type: ActivityType.Listening,
-        details: formatSongLine(three_line.line1), // Track title
-        state: formatSongLine(three_line.line2), // Track artist
+        details: formatSongLine(track), // Track title
+        state: formatSongLine(artist), // Track artist
         startTimestamp,
         endTimestamp,
         instance: false,
@@ -257,7 +260,7 @@ async function SongChanged(core, data) {
             Settings.discogsEnable
             && !Settings.imgurEnable
         ) {
-            Discogs.Search(data.now_playing.three_line.line2, data.now_playing.three_line.line1).then((result) => {
+            Discogs.Search(artist, album, track).then((result) => {
                 if(result.cover_image) {
                     PreviousAlbumArt.imageKey = image_key;
                     PreviousAlbumArt.imageUrl = result.cover_image;
