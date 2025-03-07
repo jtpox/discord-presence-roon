@@ -100,7 +100,7 @@ async function GetAlbumArt(image_key, GetImageFn) {
 
         try {
             const { images } = album.data;
-            const art = images.find((image) => image.title == image_key);
+            const art = images?.find((image) => image.title == image_key);
 
             // Art doesn't exist, so upload it.
             let link = '';
