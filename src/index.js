@@ -235,7 +235,7 @@ async function SongChanged(core, data) {
         smallImageKey: DEFAULT_IMAGE,
         smallImageText: `Listening at: ${data.display_name}`,
         largeImageKey: PreviousAlbumArt.imageUrl,
-        largeImageText: (album)? album : `Listening at: ${data.display_name}`,
+        largeImageText: (album)? formatSongLine(album) : `Listening at: ${data.display_name}`,
     };
     Discord.Self().user?.setActivity(activity);
 
