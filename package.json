@@ -19,7 +19,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@roonlabs/node-roon-api": "^1.2.3",
+    "@roonlabs/node-roon-api": "github:RoonLabs/node-roon-api",
     "colors": "^1.4.0",
     "disconnect": "^1.2.2",
     "@xhayper/discord-rpc": "^1.2.1",
