@@ -1,0 +1,4 @@
+services:
+  discord-presence-roon:
+    image: discord-presence-roon:latest
+    network_mode: "host"
