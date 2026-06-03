@@ -20,10 +20,11 @@
   "license": "MIT",
   "dependencies": {
     "@roonlabs/node-roon-api": "github:RoonLabs/node-roon-api",
+    "@xhayper/discord-rpc": "^1.2.1",
     "colors": "^1.4.0",
     "disconnect": "^1.2.2",
-    "@xhayper/discord-rpc": "^1.2.1",
     "discord-api-types": "^0.37.110",
+    "discord-ipc": "^1.0.0",
     "dotenv": "^16.3.1",
     "node-roon-api-image": "github:roonlabs/node-roon-api-image",
     "node-roon-api-settings": "github:roonlabs/node-roon-api-settings",
