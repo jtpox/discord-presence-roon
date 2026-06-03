@@ -1,5 +1,5 @@
 /** @module discord */
-const { register, Client } = require('@xhayper/discord-rpc');
+const { DiscordIPC, ActivityTypes } = require('discord-ipc');
 const { Info, Error } = require('./console');
 
 let Discord = undefined;
@@ -10,17 +10,19 @@ const scopes = ['rpc'];
  * @function Initiate
  * @param {import('./settings').TSettings} settings Extension settings object.
  */
-function Initiate(settings) {
-    const client = new Client({
-        transport: 'ipc',
+async function Initiate(settings) {
+    Discord = new DiscordIPC({
+        clientId: settings.discordClientId,
+        debug: true,
     });
 
-    client.on('ready', () => {
-        Info(`Discord: Authed for user ${client.user.username}`);
-        Discord = client;
-    });
-
-    Connect(client, settings.discordClientId);
+    try {
+        await Discord.connect();
+        await Discord.handshake();
+        await Discord.authenticate();
+    } catch (err) {
+        Error(`Discord IPC Init: ${err}`);
+    }
 }
 
 /**
