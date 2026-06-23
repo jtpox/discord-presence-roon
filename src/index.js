@@ -259,8 +259,8 @@ async function SongChanged(core, data) {
     startTimestamp,
     endTimestamp,
     instance: false,
-    smallImageKey: DEFAULT_IMAGE,
-    smallImageText: `Listening at: ${data.display_name}`,
+    // smallImageKey: DEFAULT_IMAGE,
+    // smallImageText: `Listening at: ${data.display_name}`,
     largeImageKey: PreviousAlbumArt.imageUrl,
     largeImageText: album
       ? formatSongLine(album)
