@@ -1,31 +1,31 @@
 #!/usr/bin/env node
 /** @module main */
-const { version, author, homepage } = require('../package.json');
-const { ActivityType } = require('discord-api-types/v10');
-const RoonApi = require('@roonlabs/node-roon-api');
-const RoonApiTransport = require('node-roon-api-transport');
-const RoonApiImage = require('node-roon-api-image');
-const semver = require('semver');
+const { version, author, homepage } = require("../package.json");
+const { ActivityType } = require("discord-api-types/v10");
+const RoonApi = require("@roonlabs/node-roon-api");
+const RoonApiTransport = require("node-roon-api-transport");
+const RoonApiImage = require("node-roon-api-image");
+const semver = require("semver");
 
-const { DEFAULT_IMAGE, UPDATE_CHECK, UPDATE_CHECK_URL } = require('./common');
-const RoonSettings = require('./settings');
-const Discord = require('./discord');
-const Discogs = require('./discogs');
-const Imgur = require('./imgur');
+const { DEFAULT_IMAGE, UPDATE_CHECK, UPDATE_CHECK_URL } = require("./common");
+const RoonSettings = require("./settings");
+const Discord = require("./discord");
+const Discogs = require("./discogs");
+const Imgur = require("./imgur");
 
-const { Info, Debug, Warn, Error } = require('./console');
+const { Info, Debug, Warn, Error } = require("./console");
 
 var roon = new RoonApi({
-    extension_id: 'com.jtpox.discord-roon',
-    display_name: `Discord Presence Integration`,
-    display_version: version,
-    publisher: author.name,
-    email: author.email,
-    website: homepage,
+  extension_id: "com.jtpox.discord-roon",
+  display_name: `Discord Presence Integration`,
+  display_version: version,
+  publisher: author.name,
+  email: author.email,
+  website: homepage,
 
-    core_paired: Paired,
-    core_unpaired: Unpaired,
-    log_level: "none"
+  core_paired: Paired,
+  core_unpaired: Unpaired,
+  log_level: "none",
 });
 
 /** @type {import('./settings').TSettings} */
@@ -36,18 +36,17 @@ let Settings;
  * @function Initiate
  */
 function Initiate() {
+  CheckVersion();
+  RoonSettings.Initiate(roon);
+  InitiateIntegrations();
 
-    CheckVersion();
-    RoonSettings.Initiate(roon);
-    InitiateIntegrations();
+  roon.init_services({
+    required_services: [RoonApiTransport, RoonApiImage],
+    provided_services: [RoonSettings.Service(InitiateIntegrations)],
+  });
+  roon.start_discovery();
 
-    roon.init_services({
-        required_services: [RoonApiTransport, RoonApiImage],
-        provided_services: [RoonSettings.Service(InitiateIntegrations)],
-    });
-    roon.start_discovery();
-
-    setInterval(CheckVersion, UPDATE_CHECK);
+  setInterval(CheckVersion, UPDATE_CHECK);
 }
 
 /**
@@ -55,12 +54,12 @@ function Initiate() {
  * @function InitiateIntegrations
  */
 function InitiateIntegrations() {
-    Info('Extension: Reloading settings');
-    Settings = roon.load_config('settings') || RoonSettings.DefaultSettings;
+  Info("Extension: Reloading settings on dev");
+  Settings = roon.load_config("settings") || RoonSettings.DefaultSettings;
 
-    Discord.Initiate(Settings);
-    Discogs.Initiate(roon, Settings);
-    Imgur.Initiate(roon, Settings);
+  Discord.Initiate(Settings);
+  Discogs.Initiate(roon, Settings);
+  Imgur.Initiate(roon, Settings);
 }
 
 /**
@@ -68,11 +67,14 @@ function InitiateIntegrations() {
  * @function CheckVersion
  */
 async function CheckVersion() {
-    const latest_package_json = await fetch(UPDATE_CHECK_URL);
-    if(!latest_package_json.ok) return;
+  const latest_package_json = await fetch(UPDATE_CHECK_URL);
+  if (!latest_package_json.ok) return;
 
-    const package = await latest_package_json.json();
-    if(semver.gt(package.version, version)) Warn(`New discord-presence-roon update available! | Running version: ${version} | Latest version: ${package.version}`);
+  const package = await latest_package_json.json();
+  if (semver.gt(package.version, version))
+    Warn(
+      `New discord-presence-roon update available! | Running version: ${version} | Latest version: ${package.version}`,
+    );
 }
 
 /**
@@ -81,63 +83,72 @@ async function CheckVersion() {
  * @param {object} core The Roon core.
  */
 function Paired(core) {
-    let transport = core.services.RoonApiTransport;
-    Info('Roon Paired');
+  let transport = core.services.RoonApiTransport;
+  Info("Roon Paired");
 
-    let zone_info = {
-        zone_id: null,
-        display_name: null,
-        outputs: [],
-        state: '',
-        is_next_allowed: true,
-        is_previous_allowed: true,
-        is_pause_allowed: false,
-        is_play_allowed: true,
-        is_seek_allowed: true,
-        queue_items_remaining: 0,
-        queue_time_remaining: 0,
-        seek_position: 0,
-        settings: {},
-        now_playing: {},
-    };
-    transport.subscribe_zones((cmd, data) => {
-        if(!['Changed', 'Subscribed'].includes(cmd)) return;
-        switch(Object.keys(data)[0]) {
-            case 'zones_removed':
-                Discord.Self().user?.clearActivity();
-                return;
-            case 'zones':
-            case 'zones_changed':
-            case 'zones_added':
-                const available_zones = data.zones || data.zones_changed || data.zones_added;
-                let priority_zone;
-                
-                if (Settings.roonZones.trim().toLowerCase() === 'all') {
-                    // Use first available zone when "All" is specified
-                    priority_zone = available_zones;
-                } else {
-                    // Filter zones based on configured list
-                    const zones_to_check = Settings.roonZones.split(',');
-                    const zones = available_zones.filter((zone_data) => zones_to_check.includes(zone_data.display_name));
-                    priority_zone = zones.sort((a, b) => zones_to_check.indexOf(a.display_name) - zones_to_check.indexOf(b.display_name));
-                }
-                
-                if(priority_zone.length < 1) return;
-                zone_info = { ...zone_info, ...priority_zone[0] };
-                break;
-            case 'zones_seek_changed':
-                const correct_zone = data.zones_seek_changed.find(el => el.zone_id === zone_info.zone_id);
-                if(!correct_zone) return;
+  let zone_info = {
+    zone_id: null,
+    display_name: null,
+    outputs: [],
+    state: "",
+    is_next_allowed: true,
+    is_previous_allowed: true,
+    is_pause_allowed: false,
+    is_play_allowed: true,
+    is_seek_allowed: true,
+    queue_items_remaining: 0,
+    queue_time_remaining: 0,
+    seek_position: 0,
+    settings: {},
+    now_playing: {},
+  };
+  transport.subscribe_zones((cmd, data) => {
+    if (!["Changed", "Subscribed"].includes(cmd)) return;
+    switch (Object.keys(data)[0]) {
+      case "zones_removed":
+        Discord.Self().user?.clearActivity();
+        return;
+      case "zones":
+      case "zones_changed":
+      case "zones_added":
+        const available_zones =
+          data.zones || data.zones_changed || data.zones_added;
+        let priority_zone;
 
-                zone_info.now_playing.seek_position = correct_zone.seek_position;
-                zone_info = { ...zone_info, ...correct_zone };
-                break;
+        if (Settings.roonZones.trim().toLowerCase() === "all") {
+          // Use first available zone when "All" is specified
+          priority_zone = available_zones;
+        } else {
+          // Filter zones based on configured list
+          const zones_to_check = Settings.roonZones.split(",");
+          const zones = available_zones.filter((zone_data) =>
+            zones_to_check.includes(zone_data.display_name),
+          );
+          priority_zone = zones.sort(
+            (a, b) =>
+              zones_to_check.indexOf(a.display_name) -
+              zones_to_check.indexOf(b.display_name),
+          );
         }
 
-        if(Discord.Self() === undefined) return;
+        if (priority_zone.length < 1) return;
+        zone_info = { ...zone_info, ...priority_zone[0] };
+        break;
+      case "zones_seek_changed":
+        const correct_zone = data.zones_seek_changed.find(
+          (el) => el.zone_id === zone_info.zone_id,
+        );
+        if (!correct_zone) return;
 
-        SongChanged(core, zone_info);
-    });
+        zone_info.now_playing.seek_position = correct_zone.seek_position;
+        zone_info = { ...zone_info, ...correct_zone };
+        break;
+    }
+
+    if (Discord.Self() === undefined) return;
+
+    SongChanged(core, zone_info);
+  });
 }
 
 /**
@@ -145,14 +156,14 @@ function Paired(core) {
  * @param {object} core The Roon core.
  */
 function Unpaired(core) {
-    if(Discord.Self() === undefined) return;
-    Discord.Self().user?.clearActivity();
+  if (Discord.Self() === undefined) return;
+  Discord.Self().user?.clearActivity();
 }
 
 let PreviousAlbumArt = {
-    imageKey: DEFAULT_IMAGE,
-    imageUrl: DEFAULT_IMAGE,
-    uploading: false,
+  imageKey: DEFAULT_IMAGE,
+  imageUrl: DEFAULT_IMAGE,
+  uploading: false,
 };
 
 /**
@@ -164,28 +175,39 @@ let PreviousAlbumArt = {
  * @param {string} track The track title.
  */
 async function SetAlbumArt(core, image_key, artist, album, track) {
-    if(!image_key || image_key === PreviousAlbumArt.imageKey || PreviousAlbumArt.uploading) return;
-    PreviousAlbumArt.imageKey = image_key;
-    PreviousAlbumArt.imageUrl = DEFAULT_IMAGE;
+  if (
+    !image_key ||
+    image_key === PreviousAlbumArt.imageKey ||
+    PreviousAlbumArt.uploading
+  )
+    return;
+  PreviousAlbumArt.imageKey = image_key;
+  PreviousAlbumArt.imageUrl = DEFAULT_IMAGE;
 
-    if(Settings.imgurEnable) {
-        PreviousAlbumArt.uploading = true;
-        Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
-            PreviousAlbumArt.imageUrl = art;
-            PreviousAlbumArt.uploading = false;
-            Discord.Self().user?.setActivity({ largeImageKey: art });
-        }).catch((err) => Warn(`Imgur fetch failed: ${err}`))
-          .finally(() => PreviousAlbumArt.uploading = false);
-    } else if(Settings.discogsEnable) {
-        Discogs.Search(artist, album, track).then((result) => {
-            if(result.cover_image) {
-                PreviousAlbumArt.imageUrl = result.cover_image;
-                Discord.Self().user?.setActivity({ largeImageKey: result.cover_image});
-            } else {
-                Info(`No album art found for '${track} - ${artist}' in Discogs`);
-            }
-        }).catch((err) => Warn(`Discogs search failed: ${err}`));
-    }
+  if (Settings.imgurEnable) {
+    PreviousAlbumArt.uploading = true;
+    Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core)))
+      .then((art) => {
+        PreviousAlbumArt.imageUrl = art;
+        PreviousAlbumArt.uploading = false;
+        Discord.Self().user?.setActivity({ largeImageKey: art });
+      })
+      .catch((err) => Warn(`Imgur fetch failed: ${err}`))
+      .finally(() => (PreviousAlbumArt.uploading = false));
+  } else if (Settings.discogsEnable) {
+    Discogs.Search(artist, album, track)
+      .then((result) => {
+        if (result.cover_image) {
+          PreviousAlbumArt.imageUrl = result.cover_image;
+          Discord.Self().user?.setActivity({
+            largeImageKey: result.cover_image,
+          });
+        } else {
+          Info(`No album art found for '${track} - ${artist}' in Discogs`);
+        }
+      })
+      .catch((err) => Warn(`Discogs search failed: ${err}`));
+  }
 }
 
 /**
@@ -194,12 +216,15 @@ async function SetAlbumArt(core, image_key, artist, album, track) {
  * @returns {string | undefined} The formatted line, or `undefined` if {@link line} is empty.
  */
 function formatSongLine(line) {
-    switch (line.length) {
-        case 0: return undefined;
-        case 1: line += " "; break;
-    }
+  switch (line.length) {
+    case 0:
+      return undefined;
+    case 1:
+      line += " ";
+      break;
+  }
 
-    return line.substring(0, 128);
+  return line.substring(0, 128);
 }
 
 /**
@@ -210,71 +235,75 @@ function formatSongLine(line) {
  * @param {object} data The data provided by Roon zones.
  */
 async function SongChanged(core, data) {
-    switch(data.state) {
-        case 'playing': break;
-        case 'paused': Discord.Self().user?.clearActivity();
-        default: return;
-    }
+  switch (data.state) {
+    case "playing":
+      break;
+    case "paused":
+      Discord.Self().user?.clearActivity();
+    default:
+      return;
+  }
 
-    const {
-        image_key,
-        length,
-        seek_position,
-        three_line,
-    } = data.now_playing;
+  const { image_key, length, seek_position, three_line } = data.now_playing;
 
-    const {
-        line1: track,
-        line2: artist,
-        line3: album,
-    } = three_line;
+  const { line1: track, line2: artist, line3: album } = three_line;
 
-    const startTimestamp = Date.now() - (seek_position ?? 0) * 1000;
-    const endTimestamp = startTimestamp + length * 1000;
+  const startTimestamp = Date.now() - (seek_position ?? 0) * 1000;
+  const endTimestamp = startTimestamp + length * 1000;
 
-    const activity = {
-        type: ActivityType.Listening,
-        details: formatSongLine(track), // Track title
-        state: formatSongLine(artist), // Track artist
-        startTimestamp,
-        endTimestamp,
-        instance: false,
-        smallImageKey: DEFAULT_IMAGE,
-        smallImageText: `Listening at: ${data.display_name}`,
-        largeImageKey: PreviousAlbumArt.imageUrl,
-        largeImageText: (album)? formatSongLine(album) : `Listening at: ${data.display_name}`,
-    };
-    Discord.Self().user?.setActivity(activity);
+  const activity = {
+    name: `Listening to ${track} - ${artist}`,
+    type: ActivityType.Listening,
+    details: formatSongLine(track), // Track title
+    state: formatSongLine(artist), // Track artist
+    startTimestamp,
+    endTimestamp,
+    instance: false,
+    smallImageKey: DEFAULT_IMAGE,
+    smallImageText: `Listening at: ${data.display_name}`,
+    largeImageKey: PreviousAlbumArt.imageUrl,
+    largeImageText: album
+      ? formatSongLine(album)
+      : `Listening at: ${data.display_name}`,
+  };
+  Discord.Self().user?.setActivity(activity);
 
-    if(
-        !image_key
-        || image_key === PreviousAlbumArt.imageKey
-        || PreviousAlbumArt.uploading
-    ) return;
+  if (
+    !image_key ||
+    image_key === PreviousAlbumArt.imageKey ||
+    PreviousAlbumArt.uploading
+  )
+    return;
 
-    if(Settings.imgurEnable) {
-        PreviousAlbumArt.uploading = true;
-        Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core))).then((art) => {
-            PreviousAlbumArt.imageKey = image_key;
-            PreviousAlbumArt.imageUrl = art;
-            PreviousAlbumArt.uploading = false;
-            Discord.Self().user?.setActivity({ largeImageKey: art });
-        }).catch(() => {});
-    }
+  if (Settings.imgurEnable) {
+    PreviousAlbumArt.uploading = true;
+    Imgur.GetAlbumArt(image_key, GetImage(new RoonApiImage(core)))
+      .then((art) => {
+        PreviousAlbumArt.imageKey = image_key;
+        PreviousAlbumArt.imageUrl = art;
+        PreviousAlbumArt.uploading = false;
+        Discord.Self().user?.setActivity({ largeImageKey: art });
+      })
+      .catch(() => {});
+  }
 
-    if(Settings.discogsEnable && !Settings.imgurEnable) {
-        Discogs.Search(artist, album, track).then((result) => {
-            if(result.cover_image) {
-                PreviousAlbumArt.imageKey = image_key;
-                PreviousAlbumArt.imageUrl = result.cover_image;
-                Discord.Self().user?.setActivity({ largeImageKey: result.cover_image });
-            } else {
-                PreviousAlbumArt.imageKey = image_key;
-                PreviousAlbumArt.imageUrl = DEFAULT_IMAGE;
-                Discord.Self().user?.setActivity({ largeImageKey: DEFAULT_IMAGE });
-            }
-        }).catch(() => {});
-    }
+  if (Settings.discogsEnable && !Settings.imgurEnable) {
+    Discogs.Search(artist, album, track)
+      .then((result) => {
+        if (result.cover_image) {
+          PreviousAlbumArt.imageKey = image_key;
+          PreviousAlbumArt.imageUrl = result.cover_image;
+          Discord.Self().user?.setActivity({
+            largeImageKey: result.cover_image,
+          });
+        } else {
+          PreviousAlbumArt.imageKey = image_key;
+          PreviousAlbumArt.imageUrl = DEFAULT_IMAGE;
+          Discord.Self().user?.setActivity({ largeImageKey: DEFAULT_IMAGE });
+        }
+      })
+      .catch(() => {});
+  }
 }
 
 /**
@@ -284,30 +313,30 @@ async function SongChanged(core, data) {
  * @return {GetBuffer}
  */
 function GetImage(api) {
-    /**
-     * Inner function for GetImage. Uses the RoonAPIImage instance to get the file buffer of the album image.
-     * @function
-     * @param {string} image_key Key of the album image.
-     * @return {Promise<Buffer|string>} File buffer of the album image.
-     */
-    const GetBuffer = function(image_key) {
-        return new Promise((resolve, reject) => {
-            api.get_image(image_key, (error, content_type, image) => {
-                if(error) reject(error);
+  /**
+   * Inner function for GetImage. Uses the RoonAPIImage instance to get the file buffer of the album image.
+   * @function
+   * @param {string} image_key Key of the album image.
+   * @return {Promise<Buffer|string>} File buffer of the album image.
+   */
+  const GetBuffer = function (image_key) {
+    return new Promise((resolve, reject) => {
+      api.get_image(image_key, (error, content_type, image) => {
+        if (error) reject(error);
 
-                resolve(Buffer.from(image));
-            });
-        });
-    }
+        resolve(Buffer.from(image));
+      });
+    });
+  };
 
-    return GetBuffer;
+  return GetBuffer;
 }
 
-if(require.main === module) {
-    Initiate();
+if (require.main === module) {
+  Initiate();
 }
 
 module.exports = {
-    Initiate,
-    InitiateIntegrations,
-}
+  Initiate,
+  InitiateIntegrations,
+};
