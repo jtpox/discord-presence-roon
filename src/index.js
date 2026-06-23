@@ -252,7 +252,6 @@ async function SongChanged(core, data) {
   const endTimestamp = startTimestamp + length * 1000;
 
   const activity = {
-    name: `Listening to ${track} - ${artist}`,
     type: ActivityType.Listening,
     details: formatSongLine(track), // Track title
     state: formatSongLine(artist), // Track artist
